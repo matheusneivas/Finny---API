@@ -1,0 +1,56 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!/src/main/*/build/
+!/src/test/*/build/
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!/src/main/*/out/
+!/src/test/*/out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Spring Boot
+application-local.yml
+application-prod.yml
+
+# Temporary files
+/tmp/
+*.tmp
+
+# Sensitive data
+application-secrets.yml
+.env
+.env.local
+*.pem
+*.key
+
+# Storage (uploaded images)
+finny-images/
+storage/
+
+# Database
+*.db
+*.sqlite
+
+# Class files
+*.class
