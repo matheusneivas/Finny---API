@@ -19,6 +19,8 @@ public class ProfileResponse {
     private LocalDate birthDate;
     private String occupation;
     private IncomeRange incomeRange;
+    private Boolean paysRent;
+    private BigDecimal monthlyRent;
     private Boolean hasDebts;
     private BigDecimal totalDebt;
     private Set<String> debtTypes;
@@ -26,6 +28,7 @@ public class ProfileResponse {
     private Integer emergencyFundMonths;
     private Boolean hasInvestments;
     private Set<String> investmentTypes;
+    private BigDecimal monthlyInvestmentGoal;
     private Set<String> shortTermGoals;
     private Set<String> longTermGoals;
     private String primaryGoal;
@@ -36,6 +39,7 @@ public class ProfileResponse {
     private ReportFrequency reportFrequency;
     private CommunicationStyle communicationStyle;
     private Set<String> notificationPreferences;
+    private Integer currentStep;
     private Boolean onboardingCompleted;
     private LocalDateTime onboardingCompletedAt;
 }

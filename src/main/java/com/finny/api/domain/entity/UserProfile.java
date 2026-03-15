@@ -43,7 +43,14 @@ public class UserProfile {
     @Column(length = 20)
     private IncomeRange incomeRange;
 
-    // Etapa 2: Situação Financeira
+    // Etapa 2: Renda e gastos fixos
+    @Column
+    private Boolean paysRent;
+
+    @Column(precision = 15, scale = 2)
+    private BigDecimal monthlyRent;
+
+    // Etapa 3: Situação Financeira
     @Column
     private Boolean hasDebts;
 
@@ -69,7 +76,10 @@ public class UserProfile {
     @Column(name = "investment_types", length = 50)
     private Set<String> investmentTypes = new HashSet<>();
 
-    // Etapa 3: Objetivos
+    @Column(precision = 15, scale = 2)
+    private BigDecimal monthlyInvestmentGoal;
+
+    // Etapa 4: Objetivos
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "user_short_term_goals", joinColumns = @JoinColumn(name = "user_profile_user_id"))
     @Column(name = "short_term_goals", length = 100)
@@ -86,7 +96,7 @@ public class UserProfile {
     @Column(length = 50)
     private String primaryGoalTimeframe;
 
-    // Etapa 4: Preferências de Controle
+    // Etapa 5: Preferências de Controle
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private ExpenseControlPreference expenseControlPreference;
@@ -104,7 +114,7 @@ public class UserProfile {
     @Column(length = 20)
     private ReportFrequency reportFrequency;
 
-    // Etapa 5: Personalização
+    // Etapa 5 cont: Personalização
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private CommunicationStyle communicationStyle;
@@ -115,6 +125,9 @@ public class UserProfile {
     private Set<String> notificationPreferences = new HashSet<>();
 
     // Metadata
+    @Column(nullable = false)
+    private Integer currentStep = 0;
+
     @Column(nullable = false)
     private Boolean onboardingCompleted = false;
 
