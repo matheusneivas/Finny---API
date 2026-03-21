@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/profile")
+@RequestMapping("/api/v1/users/profile")
 @RequiredArgsConstructor
 @Tag(name = "Profile", description = "Endpoints de perfil do usuário")
 @SecurityRequirement(name = "bearerAuth")

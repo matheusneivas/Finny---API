@@ -51,15 +51,13 @@ jwt:
   expiration: ${JWT_EXPIRATION:86400000}
   refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
-n8n:
-  base-url: ${N8N_BASE_URL:http://localhost:5678}
-  api-key: ${N8N_API_KEY:n8n-api-key}
-  webhooks:
-    chat: /webhook/chat
-    ocr: /webhook/ocr
-  timeout:
-    chat: 30000
-    ocr: 60000
+openai:
+  api-key: ${OPENAI_API_KEY:sk-proj-sua-chave-aqui}
+  api-url: https://api.openai.com/v1/chat/completions
+  model: gpt-3.5-turbo
+  max-tokens: 500
+  temperature: 0.7
+  timeout: 30000
 
 internal:
   api-key: ${INTERNAL_API_KEY:internal-callback-api-key}

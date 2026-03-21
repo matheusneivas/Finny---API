@@ -16,6 +16,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProfileResponse {
+    private String fullName;
     private LocalDate birthDate;
     private String occupation;
     private IncomeRange incomeRange;

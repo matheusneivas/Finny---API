@@ -39,6 +39,7 @@ public class OnboardingService {
 
     // ── GET status ──────────────────────────────────────────────────────────
 
+    @Transactional
     public OnboardingStepResponse getStatus(UUID userId) {
         User user = findUser(userId);
         UserProfile profile = getOrCreateProfile(user);
@@ -190,15 +191,15 @@ public class OnboardingService {
     }
 
     private UserProfile getOrCreateProfile(User user) {
-        if (user.getProfile() != null) {
-            return user.getProfile();
-        }
-        UserProfile profile = new UserProfile();
-        profile.setUser(user);
-        profile.setUserId(user.getId());
-        profile.setCurrentStep(0);
-        profile.setOnboardingCompleted(false);
-        return userProfileRepository.save(profile);
+        return userProfileRepository.findById(user.getId())
+            .orElseGet(() -> {
+                UserProfile profile = new UserProfile();
+                profile.setUser(user);
+                // userId é preenchido automaticamente pelo @MapsId no persist()
+                profile.setCurrentStep(0);
+                profile.setOnboardingCompleted(false);
+                return userProfileRepository.save(profile);
+            });
     }
 
     private void assertNotCompleted(UserProfile profile) {

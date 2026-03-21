@@ -1,6 +1,6 @@
 package com.finny.api.presentation.controller;
 
-import com.finny.api.infrastructure.n8n.N8nOcrResponse;
+import com.finny.api.application.dto.request.OcrCallbackRequest;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ public class InternalController {
     @PostMapping("/callbacks/ocr/{callbackToken}")
     public ResponseEntity<Void> ocrCallback(
             @PathVariable String callbackToken,
-            @RequestBody N8nOcrResponse ocrResult) {
+            @RequestBody OcrCallbackRequest ocrResult) {
 
         log.info("Received OCR callback for token: {}", callbackToken);
 

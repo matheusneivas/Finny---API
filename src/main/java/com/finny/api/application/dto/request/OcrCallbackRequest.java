@@ -1,7 +1,5 @@
-package com.finny.api.infrastructure.n8n;
+package com.finny.api.application.dto.request;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -9,10 +7,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
-@Builder
 @NoArgsConstructor
-@AllArgsConstructor
-public class N8nOcrResponse {
+public class OcrCallbackRequest {
     private BigDecimal amount;
     private String description;
     private LocalDate date;
