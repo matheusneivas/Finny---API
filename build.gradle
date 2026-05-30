@@ -57,6 +57,9 @@ dependencies {
     // Dotenv - carrega .env automaticamente
     implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
+    // Firebase Admin SDK (push notifications)
+    implementation 'com.google.firebase:firebase-admin:9.2.0'
+
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'

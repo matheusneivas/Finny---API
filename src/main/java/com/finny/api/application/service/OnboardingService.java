@@ -5,13 +5,16 @@ import com.finny.api.application.dto.response.OnboardingStepResponse;
 import com.finny.api.application.dto.response.ProfileResponse;
 import com.finny.api.application.exception.BusinessException;
 import com.finny.api.application.exception.EntityNotFoundException;
+import com.finny.api.application.exception.ResourceConflictException;
 import com.finny.api.application.mapper.ProfileMapper;
+import com.finny.api.application.util.CpfUtils;
 import com.finny.api.domain.entity.User;
 import com.finny.api.domain.entity.UserProfile;
 import com.finny.api.domain.repository.UserProfileRepository;
 import com.finny.api.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +40,9 @@ public class OnboardingService {
     private final UserProfileRepository userProfileRepository;
     private final ProfileMapper profileMapper;
 
+    @Value("${app.cpf-secret}")
+    private String cpfSecret;
+
     // ── GET status ──────────────────────────────────────────────────────────
 
     @Transactional
@@ -54,7 +60,22 @@ public class OnboardingService {
             throw new BusinessException("Usuário deve ter pelo menos 18 anos");
         }
 
+        if (!CpfUtils.isValid(request.getCpf())) {
+            throw new BusinessException("CPF inválido");
+        }
+        String cpfHash = CpfUtils.hash(request.getCpf(), cpfSecret);
+
         User user = findUser(userId);
+
+        // Permite re-envio do mesmo CPF (já associado a este usuário), bloqueia CPF de outro usuário
+        if (user.getCpfHash() == null || !user.getCpfHash().equals(cpfHash)) {
+            if (userRepository.existsByCpfHash(cpfHash)) {
+                throw new ResourceConflictException("CPF já possui uma conta cadastrada");
+            }
+            user.setCpfHash(cpfHash);
+            userRepository.save(user);
+        }
+
         UserProfile profile = getOrCreateProfile(user);
         assertNotCompleted(profile);
 

@@ -33,6 +33,9 @@ public class User {
     @Column(length = 255)
     private String fullName;
 
+    @Column(length = 64, unique = true)
+    private String cpfHash;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserPlan plan = UserPlan.FREE;

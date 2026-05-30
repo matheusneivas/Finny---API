@@ -157,4 +157,27 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
         @Param("transactionId") UUID transactionId,
         @Param("userId") UUID userId
     );
+
+    @Query("SELECT t FROM Transaction t JOIN FETCH t.category JOIN FETCH t.user " +
+           "WHERE t.dueDayOfMonth = :day AND t.deleted = false")
+    List<Transaction> findByDueDayOfMonth(@Param("day") Integer day);
+
+    /**
+     * Agrupa despesas por categoria em um período
+     * Retorna: [categoryId, categoryName, categoryIcon, categoryColor, total, count]
+     */
+    @Query("SELECT t.category.id, t.category.name, t.category.icon, t.category.color, " +
+           "SUM(t.amount), COUNT(t) " +
+           "FROM Transaction t " +
+           "WHERE t.user.id = :userId " +
+           "AND t.type = 'EXPENSE' " +
+           "AND t.deleted = false " +
+           "AND t.transactionDate BETWEEN :startDate AND :endDate " +
+           "GROUP BY t.category.id, t.category.name, t.category.icon, t.category.color " +
+           "ORDER BY SUM(t.amount) DESC")
+    List<Object[]> sumExpenseGroupedByCategory(
+        @Param("userId") UUID userId,
+        @Param("startDate") LocalDate startDate,
+        @Param("endDate") LocalDate endDate
+    );
 }

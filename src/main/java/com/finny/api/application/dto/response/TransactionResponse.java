@@ -1,5 +1,6 @@
 package com.finny.api.application.dto.response;
 
+import com.finny.api.domain.enums.ExpenseFrequency;
 import com.finny.api.domain.enums.TransactionSource;
 import com.finny.api.domain.enums.TransactionType;
 import lombok.AllArgsConstructor;
@@ -24,6 +25,10 @@ public class TransactionResponse {
     private String description;
     private LocalDate transactionDate;
     private TransactionSource source;
+    private ExpenseFrequency frequency;
+    private Integer repeatCount;
+    private String notes;
+    private Integer dueDayOfMonth;
     private String ocrImageUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

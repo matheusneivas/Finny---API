@@ -1,5 +1,6 @@
 package com.finny.api.domain.entity;
 
+import com.finny.api.domain.enums.ExpenseFrequency;
 import com.finny.api.domain.enums.TransactionSource;
 import com.finny.api.domain.enums.TransactionType;
 import jakarta.persistence.*;
@@ -56,6 +57,19 @@ public class Transaction {
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private TransactionSource source;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private ExpenseFrequency frequency;
+
+    @Column
+    private Integer repeatCount;
+
+    @Column(length = 200)
+    private String notes;
+
+    @Column
+    private Integer dueDayOfMonth;
 
     @Column(length = 500)
     private String ocrImageUrl;

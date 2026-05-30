@@ -55,6 +55,9 @@ public class SecurityConfig {
                 // Actuator (se habilitado)
                 .requestMatchers("/actuator/**").permitAll()
 
+                // Notificações requerem autenticação (token JWT no header)
+                .requestMatchers("/api/v1/notifications/**").authenticated()
+
                 // Todos os outros endpoints requerem autenticação
                 .anyRequest().authenticated()
             );

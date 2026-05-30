@@ -2,6 +2,7 @@ package com.finny.api.presentation.controller;
 
 import com.finny.api.application.dto.request.TransactionRequest;
 import com.finny.api.application.dto.response.ApiResponse;
+import com.finny.api.application.dto.response.CategorySummaryResponse;
 import com.finny.api.application.dto.response.TransactionResponse;
 import com.finny.api.application.dto.response.TransactionSummaryResponse;
 import com.finny.api.application.service.TransactionService;
@@ -101,6 +102,18 @@ public class TransactionController {
 
         UUID userId = UUID.fromString(userDetails.getUsername());
         TransactionSummaryResponse response = transactionService.getSummary(userId, startDate, endDate);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/by-category")
+    @Operation(summary = "Resumo de gastos agrupados por categoria")
+    public ResponseEntity<CategorySummaryResponse> getCategorySummary(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        UUID userId = UUID.fromString(userDetails.getUsername());
+        CategorySummaryResponse response = transactionService.getCategorySummary(userId, startDate, endDate);
         return ResponseEntity.ok(response);
     }
 }

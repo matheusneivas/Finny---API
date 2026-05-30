@@ -1,6 +1,8 @@
 package com.finny.api.application.service;
 
 import com.finny.api.application.dto.request.TransactionRequest;
+import com.finny.api.application.dto.response.CategorySummaryResponse;
+import com.finny.api.application.dto.response.CategorySummaryResponse.CategoryItem;
 import com.finny.api.application.dto.response.TransactionResponse;
 import com.finny.api.application.dto.response.TransactionSummaryResponse;
 import com.finny.api.application.exception.BusinessException;
@@ -9,6 +11,7 @@ import com.finny.api.application.mapper.TransactionMapper;
 import com.finny.api.domain.entity.Category;
 import com.finny.api.domain.entity.Transaction;
 import com.finny.api.domain.entity.User;
+import com.finny.api.domain.enums.ExpenseFrequency;
 import com.finny.api.domain.enums.TransactionSource;
 import com.finny.api.domain.repository.CategoryRepository;
 import com.finny.api.domain.repository.TransactionRepository;
@@ -21,8 +24,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -56,9 +63,41 @@ public class TransactionService {
 
         transaction = transactionRepository.save(transaction);
 
-        log.info("Transaction created successfully: {}", transaction.getId());
+        // Criar repetições se frequency != ONCE e repeatCount > 1
+        if (request.getFrequency() != null
+                && request.getFrequency() != ExpenseFrequency.ONCE
+                && request.getRepeatCount() != null
+                && request.getRepeatCount() > 1) {
+
+            List<Transaction> recurrences = new ArrayList<>();
+            LocalDate nextDate = request.getTransactionDate();
+
+            for (int i = 1; i < request.getRepeatCount(); i++) {
+                nextDate = advanceDate(nextDate, request.getFrequency());
+                Transaction recurrence = transactionMapper.toEntity(request);
+                recurrence.setUser(user);
+                recurrence.setCategory(category);
+                recurrence.setSource(TransactionSource.MANUAL);
+                recurrence.setTransactionDate(nextDate);
+                recurrences.add(recurrence);
+            }
+
+            transactionRepository.saveAll(recurrences);
+            log.info("Created {} recurrences for transaction {}", recurrences.size(), transaction.getId());
+        }
 
         return transactionMapper.toResponse(transaction);
+    }
+
+    private LocalDate advanceDate(LocalDate date, ExpenseFrequency frequency) {
+        return switch (frequency) {
+            case DAILY     -> date.plusDays(1);
+            case WEEKLY    -> date.plusWeeks(1);
+            case MONTHLY   -> date.plusMonths(1);
+            case QUARTERLY -> date.plusMonths(3);
+            case YEARLY    -> date.plusYears(1);
+            default        -> date;
+        };
     }
 
     @Transactional(readOnly = true)
@@ -148,6 +187,42 @@ public class TransactionService {
                 .totalExpense(totalExpense)
                 .balance(balance)
                 .transactionCount(transactionCount)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public CategorySummaryResponse getCategorySummary(UUID userId, LocalDate startDate, LocalDate endDate) {
+        log.debug("Getting category summary for user: {} from {} to {}", userId, startDate, endDate);
+
+        List<Object[]> rows = transactionRepository.sumExpenseGroupedByCategory(userId, startDate, endDate);
+
+        BigDecimal totalExpense = rows.stream()
+                .map(r -> (BigDecimal) r[4])
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        List<CategoryItem> categories = rows.stream().map(r -> {
+            BigDecimal total = (BigDecimal) r[4];
+            double percentage = totalExpense.compareTo(BigDecimal.ZERO) == 0 ? 0 :
+                    total.divide(totalExpense, 4, RoundingMode.HALF_UP)
+                         .multiply(BigDecimal.valueOf(100))
+                         .doubleValue();
+
+            return CategoryItem.builder()
+                    .categoryId(r[0].toString())
+                    .categoryName((String) r[1])
+                    .categoryIcon((String) r[2])
+                    .categoryColor((String) r[3])
+                    .total(total)
+                    .percentage(Math.round(percentage * 100.0) / 100.0)
+                    .transactionCount((Long) r[5])
+                    .build();
+        }).collect(Collectors.toList());
+
+        return CategorySummaryResponse.builder()
+                .startDate(startDate)
+                .endDate(endDate)
+                .totalExpense(totalExpense)
+                .categories(categories)
                 .build();
     }
 }

@@ -1,5 +1,6 @@
 package com.finny.api.infrastructure.openai;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,7 +13,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @Slf4j
@@ -43,13 +46,23 @@ public class OpenAiClient {
     }
 
     public OpenAiResponse sendMessage(List<ChatMessageDto> messages) {
-        log.info("Enviando {} mensagens para OpenAI (modelo: {})", messages.size(), model);
+        return sendMessage(messages, null, null);
+    }
+
+    public OpenAiResponse sendMessage(List<ChatMessageDto> messages, List<ToolDefinition> tools) {
+        return sendMessage(messages, tools, null);
+    }
+
+    public OpenAiResponse sendMessage(List<ChatMessageDto> messages, List<ToolDefinition> tools, String toolChoice) {
+        log.info("Enviando {} mensagens para OpenAI | modelo: {} | tool_choice: {}", messages.size(), model, toolChoice);
 
         OpenAiRequest request = OpenAiRequest.builder()
             .model(model)
             .messages(messages)
             .maxTokens(maxTokens)
             .temperature(temperature)
+            .tools(tools != null && !tools.isEmpty() ? tools : null)
+            .toolChoice(toolChoice)
             .build();
 
         HttpHeaders headers = new HttpHeaders();
@@ -67,6 +80,31 @@ public class OpenAiClient {
             log.error("Erro ao chamar OpenAI API: {}", e.getMessage(), e);
             throw new RuntimeException("Falha ao comunicar com IA: " + e.getMessage(), e);
         }
+    }
+
+    public static ToolDefinition createTransactionTool() {
+        Map<String, Object> properties = new LinkedHashMap<>();
+        properties.put("description", Map.of("type", "string", "description", "Nome ou descrição do item (ex: PS5, Aluguel, Salário)"));
+        properties.put("amount", Map.of("type", "number", "description", "Valor total em reais (ex: 5000.00)"));
+        properties.put("type", Map.of("type", "string", "enum", List.of("INCOME", "EXPENSE"), "description", "INCOME para receita, EXPENSE para despesa"));
+        properties.put("category_name", Map.of("type", "string", "description", "Nome da categoria que melhor se encaixa (ex: Eletrônicos, Alimentação, Salário)"));
+        properties.put("transaction_date", Map.of("type", "string", "description", "Data da transação no formato YYYY-MM-DD. Use a data de hoje se não informada."));
+        properties.put("frequency", Map.of("type", "string", "enum", List.of("ONCE", "DAILY", "WEEKLY", "MONTHLY", "QUARTERLY", "YEARLY"), "description", "ONCE para pagamento único, MONTHLY para parcelamento mensal"));
+        properties.put("repeat_count", Map.of("type", "integer", "description", "Número de parcelas ou repetições. Use 1 para pagamento único."));
+
+        Map<String, Object> parameters = new LinkedHashMap<>();
+        parameters.put("type", "object");
+        parameters.put("properties", properties);
+        parameters.put("required", List.of("description", "amount", "type", "category_name", "transaction_date", "frequency", "repeat_count"));
+
+        return ToolDefinition.builder()
+            .type("function")
+            .function(ToolDefinition.FunctionDefinition.builder()
+                .name("create_transaction")
+                .description("Cria uma nova transação financeira (despesa ou receita) na planilha do usuário. Use quando o usuário pedir para adicionar, registrar ou lançar uma transação.")
+                .parameters(parameters)
+                .build())
+            .build();
     }
 
     public static String buildSystemPrompt(UserContext context) {
@@ -122,12 +160,36 @@ public class OpenAiClient {
 
         if (context.getActiveGoals() != null && !context.getActiveGoals().isEmpty()) {
             prompt.append("\nMETAS ATIVAS:\n");
-            context.getActiveGoals().forEach(goal ->
+            context.getActiveGoals().forEach(goal -> {
                 prompt.append("- ").append(goal.getName())
                       .append(": R$ ").append(goal.getSavedAmount())
                       .append(" de R$ ").append(goal.getTargetAmount())
-                      .append(" (").append(goal.getProgressPercentage()).append("%)\n")
+                      .append(" (").append(goal.getProgressPercentage()).append("%)");
+                if (goal.getDeadline() != null)
+                    prompt.append(" — prazo: ").append(goal.getDeadline());
+                prompt.append("\n");
+            });
+        }
+
+        if (context.getExpensesByCategory() != null && !context.getExpensesByCategory().isEmpty()) {
+            prompt.append("\nGASTOS POR CATEGORIA (ÚLTIMOS 30 DIAS):\n");
+            context.getExpensesByCategory().forEach(cat ->
+                prompt.append("- ").append(cat.getName())
+                      .append(": R$ ").append(cat.getTotal())
+                      .append(" (").append(cat.getPercentage()).append("%)\n")
             );
+        }
+
+        if (context.getRecentTransactions() != null && !context.getRecentTransactions().isEmpty()) {
+            prompt.append("\nÚLTIMAS TRANSAÇÕES:\n");
+            context.getRecentTransactions().forEach(t -> {
+                prompt.append("- ").append(t.getDate())
+                      .append(" | ").append(t.getType().equals("INCOME") ? "RECEITA" : "DESPESA")
+                      .append(" | ").append(t.getCategory());
+                if (t.getDescription() != null && !t.getDescription().isBlank())
+                    prompt.append(" | ").append(t.getDescription());
+                prompt.append(": R$ ").append(t.getAmount()).append("\n");
+            });
         }
 
         prompt.append("\nINSTRUÇÕES:\n");
@@ -138,6 +200,8 @@ public class OpenAiClient {
         prompt.append("5. Use os dados financeiros reais do usuário quando disponíveis\n");
         prompt.append("6. Incentive bons hábitos financeiros de forma positiva\n");
         prompt.append("7. Nunca invente dados — use apenas as informações fornecidas\n");
+        prompt.append("8. O sistema NÃO tem integração com bancos ou contas bancárias. Todos os dados financeiros são registrados manualmente pelo próprio usuário. Nunca sugira que detectou algo automaticamente na conta do usuário, nem mencione dados que ele não registrou. Se os dados parecerem incompletos, incentive o usuário a registrar suas transações para obter análises mais precisas.\n");
+        prompt.append("9. REGRA MAIS IMPORTANTE: Sempre que o usuário pedir para ADICIONAR, REGISTRAR, LANÇAR, INCLUIR ou ANOTAR qualquer transação financeira (compra, gasto, despesa, receita, salário, conta, parcela, etc.), você DEVE chamar OBRIGATORIAMENTE a ferramenta create_transaction. Não responda apenas com texto confirmando ou descrevendo — execute a ferramenta na mesma resposta. Exemplos que devem acionar a ferramenta: 'adiciona o PS5', 'registra meu salário', 'anota a conta de luz', 'coloca na planilha', 'lança a compra'.\n");
 
         return prompt.toString();
     }
@@ -156,6 +220,13 @@ public class OpenAiClient {
         private Integer maxTokens;
 
         private Double temperature;
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private List<ToolDefinition> tools;
+
+        @JsonProperty("tool_choice")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private String toolChoice;
     }
 
     @Data
@@ -199,9 +270,52 @@ public class OpenAiClient {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class ChatMessageDto {
         private String role;
         private String content;
+
+        @JsonProperty("tool_calls")
+        private List<ToolCall> toolCalls;
+
+        @JsonProperty("tool_call_id")
+        private String toolCallId;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ToolDefinition {
+        private String type;
+        private FunctionDefinition function;
+
+        @Data
+        @Builder
+        @NoArgsConstructor
+        @AllArgsConstructor
+        public static class FunctionDefinition {
+            private String name;
+            private String description;
+            private Map<String, Object> parameters;
+        }
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ToolCall {
+        private String id;
+        private String type;
+        private ToolCallFunction function;
+
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
+        public static class ToolCallFunction {
+            private String name;
+            private String arguments;
+        }
     }
 
     @Data
@@ -214,6 +328,8 @@ public class OpenAiClient {
         private ProfileContext profile;
         private FinancialSummaryContext financialSummary;
         private List<GoalContext> activeGoals;
+        private List<CategoryContext> expensesByCategory;
+        private List<TransactionContext> recentTransactions;
     }
 
     @Data
@@ -257,5 +373,28 @@ public class OpenAiClient {
         private String savedAmount;
         private String targetAmount;
         private String progressPercentage;
+        private String deadline;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CategoryContext {
+        private String name;
+        private String total;
+        private double percentage;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TransactionContext {
+        private String date;
+        private String type;
+        private String category;
+        private String description;
+        private String amount;
     }
 }

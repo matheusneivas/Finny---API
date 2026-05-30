@@ -1,0 +1,4 @@
+ALTER TABLE transactions
+    ADD COLUMN IF NOT EXISTS frequency VARCHAR(20),
+    ADD COLUMN IF NOT EXISTS notes VARCHAR(200),
+    ADD COLUMN IF NOT EXISTS due_day_of_month INTEGER;

@@ -1,5 +1,6 @@
 package com.finny.api.application.dto.request;
 
+import com.finny.api.domain.enums.ExpenseFrequency;
 import com.finny.api.domain.enums.TransactionType;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -30,6 +31,17 @@ public class TransactionRequest {
     private String description;
 
     @NotNull(message = "Data é obrigatória")
-    @PastOrPresent(message = "Data não pode ser futura")
     private LocalDate transactionDate;
+
+    private ExpenseFrequency frequency;
+
+    @Min(value = 1, message = "Quantidade de repetições deve ser pelo menos 1")
+    private Integer repeatCount;
+
+    @Size(max = 200, message = "Observação deve ter no máximo 200 caracteres")
+    private String notes;
+
+    @Min(value = 1, message = "Dia de vencimento deve ser entre 1 e 31")
+    @Max(value = 31, message = "Dia de vencimento deve ser entre 1 e 31")
+    private Integer dueDayOfMonth;
 }

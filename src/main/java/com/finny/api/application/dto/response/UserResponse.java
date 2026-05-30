@@ -16,7 +16,8 @@ import java.util.UUID;
 public class UserResponse {
     private UUID id;
     private String email;
-    private String fullName;
+    private String name;
+    private Boolean onboardingCompleted;
     private UserPlan plan;
     private LocalDateTime planExpiresAt;
     private Boolean emailVerified;
