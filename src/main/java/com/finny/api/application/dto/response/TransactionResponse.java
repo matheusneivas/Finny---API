@@ -29,6 +29,7 @@ public class TransactionResponse {
     private Integer repeatCount;
     private String notes;
     private Integer dueDayOfMonth;
+    private UUID recurrenceGroupId;
     private String ocrImageUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

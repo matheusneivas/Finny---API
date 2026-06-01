@@ -71,6 +71,9 @@ public class Transaction {
     @Column
     private Integer dueDayOfMonth;
 
+    @Column(name = "recurrence_group_id")
+    private UUID recurrenceGroupId;
+
     @Column(length = 500)
     private String ocrImageUrl;
 

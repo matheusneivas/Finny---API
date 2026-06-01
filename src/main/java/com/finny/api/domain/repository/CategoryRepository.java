@@ -1,6 +1,7 @@
 package com.finny.api.domain.repository;
 
 import com.finny.api.domain.entity.Category;
+import com.finny.api.domain.enums.TransactionType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -82,6 +83,15 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
            "WHERE c.user.id = :userId " +
            "AND c.isDefault = false")
     long countCustomByUserId(@Param("userId") UUID userId);
+
+    @Query("SELECT c FROM Category c " +
+           "WHERE (c.isDefault = true OR c.user.id = :userId) " +
+           "AND (c.transactionType = :type OR c.transactionType IS NULL) " +
+           "ORDER BY c.isDefault DESC, c.name ASC")
+    List<Category> findAllAvailableForUserAndType(
+        @Param("userId") UUID userId,
+        @Param("type") TransactionType type
+    );
 
     // Legacy methods (mantidos para compatibilidade)
     @Query("SELECT c FROM Category c WHERE c.user.id = :userId OR c.user IS NULL")

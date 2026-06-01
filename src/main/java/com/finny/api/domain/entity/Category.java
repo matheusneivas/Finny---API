@@ -1,5 +1,6 @@
 package com.finny.api.domain.entity;
 
+import com.finny.api.domain.enums.TransactionType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -37,6 +38,11 @@ public class Category {
 
     @Column(nullable = false)
     private Boolean isDefault = false;
+
+    // null = aparece para ambos os tipos; INCOME ou EXPENSE = exclusivo do tipo
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transaction_type", length = 10)
+    private TransactionType transactionType;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

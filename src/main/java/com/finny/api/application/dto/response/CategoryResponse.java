@@ -1,5 +1,6 @@
 package com.finny.api.application.dto.response;
 
+import com.finny.api.domain.enums.TransactionType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,4 +18,5 @@ public class CategoryResponse {
     private String icon;
     private String color;
     private Boolean isDefault;
+    private TransactionType transactionType;
 }

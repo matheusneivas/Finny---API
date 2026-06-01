@@ -34,13 +34,17 @@ public class TransactionController {
     private final TransactionService transactionService;
 
     @GetMapping
-    @Operation(summary = "Listar transações do usuário")
+    @Operation(summary = "Listar transações do usuário",
+               description = "Aceita filtros opcionais startDate e endDate (yyyy-MM-dd). " +
+                             "Sem filtros, retorna transações até hoje (esconde recorrências futuras).")
     public ResponseEntity<Page<TransactionResponse>> getTransactions(
             @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @PageableDefault(size = 20) Pageable pageable) {
 
         UUID userId = UUID.fromString(userDetails.getUsername());
-        Page<TransactionResponse> response = transactionService.getTransactions(userId, pageable);
+        Page<TransactionResponse> response = transactionService.getTransactions(userId, startDate, endDate, pageable);
         return ResponseEntity.ok(response);
     }
 
@@ -90,6 +94,31 @@ public class TransactionController {
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .success(true)
                 .message("Transação deletada com sucesso")
+                .build());
+    }
+
+    @DeleteMapping("/{id}/recurrence")
+    @Operation(summary = "Deletar recorrências",
+               description = "mode=ALL apaga todos os meses do grupo. " +
+                             "mode=THIS_AND_FUTURE apaga este mês e os seguintes.")
+    public ResponseEntity<ApiResponse<Void>> deleteRecurrence(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "ALL") String mode) {
+
+        if (!mode.equalsIgnoreCase("ALL") && !mode.equalsIgnoreCase("THIS_AND_FUTURE")) {
+            return ResponseEntity.badRequest().body(ApiResponse.<Void>builder()
+                    .success(false)
+                    .message("mode deve ser ALL ou THIS_AND_FUTURE")
+                    .build());
+        }
+
+        UUID userId = UUID.fromString(userDetails.getUsername());
+        int deleted = transactionService.deleteRecurrence(userId, id, mode);
+
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .success(true)
+                .message(deleted + " lançamento(s) excluído(s)")
                 .build());
     }
 

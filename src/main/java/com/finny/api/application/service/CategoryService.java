@@ -7,6 +7,7 @@ import com.finny.api.application.exception.EntityNotFoundException;
 import com.finny.api.application.mapper.CategoryMapper;
 import com.finny.api.domain.entity.Category;
 import com.finny.api.domain.entity.User;
+import com.finny.api.domain.enums.TransactionType;
 import com.finny.api.domain.repository.CategoryRepository;
 import com.finny.api.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,11 +29,12 @@ public class CategoryService {
     private final CategoryMapper categoryMapper;
 
     @Transactional(readOnly = true)
-    public List<CategoryResponse> getCategories(UUID userId) {
-        log.debug("Getting categories for user: {}", userId);
+    public List<CategoryResponse> getCategories(UUID userId, TransactionType type) {
+        log.debug("Getting categories for user: {} | type: {}", userId, type);
 
-        // Retorna categorias do usuário + categorias padrão
-        List<Category> categories = categoryRepository.findByUserIdOrUserIdIsNull(userId);
+        List<Category> categories = (type != null)
+                ? categoryRepository.findAllAvailableForUserAndType(userId, type)
+                : categoryRepository.findAllAvailableForUser(userId);
 
         return categories.stream()
                 .map(categoryMapper::toResponse)

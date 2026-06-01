@@ -4,6 +4,7 @@ import com.finny.api.application.dto.request.CategoryRequest;
 import com.finny.api.application.dto.response.ApiResponse;
 import com.finny.api.application.dto.response.CategoryResponse;
 import com.finny.api.application.service.CategoryService;
+import com.finny.api.domain.enums.TransactionType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,10 +29,13 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @GetMapping
-    @Operation(summary = "Listar categorias (padrão + personalizadas)")
-    public ResponseEntity<List<CategoryResponse>> getCategories(@AuthenticationPrincipal UserDetails userDetails) {
+    @Operation(summary = "Listar categorias (padrão + personalizadas)",
+               description = "Filtro opcional: ?type=INCOME ou ?type=EXPENSE")
+    public ResponseEntity<List<CategoryResponse>> getCategories(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(required = false) TransactionType type) {
         UUID userId = UUID.fromString(userDetails.getUsername());
-        List<CategoryResponse> response = categoryService.getCategories(userId);
+        List<CategoryResponse> response = categoryService.getCategories(userId, type);
         return ResponseEntity.ok(response);
     }
 

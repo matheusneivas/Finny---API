@@ -69,6 +69,10 @@ public class TransactionService {
                 && request.getRepeatCount() != null
                 && request.getRepeatCount() > 1) {
 
+            UUID groupId = UUID.randomUUID();
+            transaction.setRecurrenceGroupId(groupId);
+            transactionRepository.save(transaction);
+
             List<Transaction> recurrences = new ArrayList<>();
             LocalDate nextDate = request.getTransactionDate();
 
@@ -79,11 +83,12 @@ public class TransactionService {
                 recurrence.setCategory(category);
                 recurrence.setSource(TransactionSource.MANUAL);
                 recurrence.setTransactionDate(nextDate);
+                recurrence.setRecurrenceGroupId(groupId);
                 recurrences.add(recurrence);
             }
 
             transactionRepository.saveAll(recurrences);
-            log.info("Created {} recurrences for transaction {}", recurrences.size(), transaction.getId());
+            log.info("Created {} recurrences for transaction {} (group {})", recurrences.size(), transaction.getId(), groupId);
         }
 
         return transactionMapper.toResponse(transaction);
@@ -101,11 +106,15 @@ public class TransactionService {
     }
 
     @Transactional(readOnly = true)
-    public Page<TransactionResponse> getTransactions(UUID userId, Pageable pageable) {
-        log.debug("Getting transactions for user: {}", userId);
+    public Page<TransactionResponse> getTransactions(UUID userId, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        log.debug("Getting transactions for user: {} | from: {} to: {}", userId, startDate, endDate);
+
+        // Sem datas: mostra desde o início até hoje (esconde recorrências futuras)
+        LocalDate effectiveStart = startDate != null ? startDate : LocalDate.of(2000, 1, 1);
+        LocalDate effectiveEnd   = endDate   != null ? endDate   : LocalDate.now();
 
         Page<Transaction> transactions = transactionRepository
-                .findByUserIdAndDeletedFalseOrderByTransactionDateDesc(userId, pageable);
+                .findByUserIdAndDateRangePaged(userId, effectiveStart, effectiveEnd, pageable);
 
         return transactions.map(transactionMapper::toResponse);
     }
@@ -151,6 +160,27 @@ public class TransactionService {
         log.info("Transaction updated successfully: {}", transactionId);
 
         return transactionMapper.toResponse(transaction);
+    }
+
+    @Transactional
+    public int deleteRecurrence(UUID userId, UUID transactionId, String mode) {
+        Transaction transaction = transactionRepository.findByIdAndUserId(transactionId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Transação não encontrada"));
+
+        UUID groupId = transaction.getRecurrenceGroupId();
+        if (groupId == null) {
+            throw new BusinessException("Esta transação não pertence a um grupo de recorrência");
+        }
+
+        List<Transaction> targets = "THIS_AND_FUTURE".equalsIgnoreCase(mode)
+                ? transactionRepository.findByRecurrenceGroupIdAndUserIdFromDate(groupId, userId, transaction.getTransactionDate())
+                : transactionRepository.findByRecurrenceGroupIdAndUserId(groupId, userId);
+
+        targets.forEach(t -> t.setDeleted(true));
+        transactionRepository.saveAll(targets);
+
+        log.info("Deleted {} recurrences | group: {} | mode: {} | user: {}", targets.size(), groupId, mode, userId);
+        return targets.size();
     }
 
     @Transactional

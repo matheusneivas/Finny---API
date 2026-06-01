@@ -162,6 +162,35 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
            "WHERE t.dueDayOfMonth = :day AND t.deleted = false")
     List<Transaction> findByDueDayOfMonth(@Param("day") Integer day);
 
+    @Query("SELECT t FROM Transaction t " +
+           "WHERE t.recurrenceGroupId = :groupId AND t.user.id = :userId AND t.deleted = false")
+    List<Transaction> findByRecurrenceGroupIdAndUserId(
+        @Param("groupId") UUID groupId,
+        @Param("userId") UUID userId
+    );
+
+    @Query("SELECT t FROM Transaction t " +
+           "WHERE t.recurrenceGroupId = :groupId AND t.user.id = :userId " +
+           "AND t.transactionDate >= :fromDate AND t.deleted = false")
+    List<Transaction> findByRecurrenceGroupIdAndUserIdFromDate(
+        @Param("groupId") UUID groupId,
+        @Param("userId") UUID userId,
+        @Param("fromDate") LocalDate fromDate
+    );
+
+    @Query("SELECT t FROM Transaction t " +
+           "WHERE t.user.id = :userId " +
+           "AND t.deleted = false " +
+           "AND t.transactionDate >= :startDate " +
+           "AND t.transactionDate <= :endDate " +
+           "ORDER BY t.transactionDate DESC, t.createdAt DESC")
+    Page<Transaction> findByUserIdAndDateRangePaged(
+        @Param("userId") UUID userId,
+        @Param("startDate") LocalDate startDate,
+        @Param("endDate") LocalDate endDate,
+        Pageable pageable
+    );
+
     /**
      * Agrupa despesas por categoria em um período
      * Retorna: [categoryId, categoryName, categoryIcon, categoryColor, total, count]
