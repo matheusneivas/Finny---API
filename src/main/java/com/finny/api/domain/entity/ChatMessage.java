@@ -43,6 +43,10 @@ public class ChatMessage {
     @Column
     private Integer tokensUsed;
 
+    /** JSON com as ações propostas pela IA nesta resposta (lista de ProposedActionResponse). */
+    @Column(columnDefinition = "TEXT")
+    private String proposedActions;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

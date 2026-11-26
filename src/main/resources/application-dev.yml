@@ -1,28 +1,44 @@
+# Perfil de desenvolvimento local: H2 em memória, Swagger ligado, logs detalhados.
+# NUNCA use este perfil em produção.
 spring:
   datasource:
-    url: jdbc:h2:mem:finnydb
+    url: jdbc:h2:mem:finnydb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
     driver-class-name: org.h2.Driver
     username: sa
     password:
 
   h2:
     console:
-      enabled: true
-      path: /h2-console
+      enabled: false
 
   jpa:
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
-        format_sql: true
 
   flyway:
     enabled: false
 
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+jwt:
+  secret: ${JWT_SECRET:dev-only-secret-do-not-use-in-production-0123456789}
+
+internal:
+  api-key: ${INTERNAL_API_KEY:dev-only-internal-key-0123456789abcdef}
+
+app:
+  cpf-secret: ${CPF_SECRET:dev-only-cpf-secret-0123456789}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:8081,http://localhost:19006,http://localhost:5173}
+
 logging:
   level:
     com.finny.api: DEBUG
-    org.springframework.security: DEBUG

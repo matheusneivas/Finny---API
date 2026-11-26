@@ -17,5 +17,11 @@ public interface UserDeviceTokenRepository extends JpaRepository<UserDeviceToken
 
     boolean existsByToken(String token);
 
+    java.util.Optional<UserDeviceToken> findByToken(String token);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("DELETE FROM UserDeviceToken t WHERE t.token = :token AND t.user.id = :userId")
+    int deleteByTokenAndUserId(@Param("token") String token, @Param("userId") UUID userId);
+
     void deleteByToken(String token);
 }

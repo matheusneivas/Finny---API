@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.io.FileInputStream;
 import java.io.IOException;
 
@@ -29,8 +29,7 @@ public class FirebaseConfig {
             return;
         }
 
-        try {
-            FileInputStream serviceAccount = new FileInputStream(serviceAccountPath);
+        try (FileInputStream serviceAccount = new FileInputStream(serviceAccountPath)) {
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                     .build();

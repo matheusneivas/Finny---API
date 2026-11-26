@@ -21,8 +21,8 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com e-mail: " + email));
+        User user = userRepository.findByEmailIgnoreCase(email == null ? "" : email.trim())
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
 
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
@@ -34,11 +34,12 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Transactional(readOnly = true)
     public UserDetails loadUserById(UUID userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com ID: " + userId));
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
 
+        // Usado pelo filtro JWT: o principal é o id do usuário (a senha não é necessária aqui)
         return new org.springframework.security.core.userdetails.User(
                 user.getId().toString(),
-                user.getPasswordHash(),
+                "",
                 new ArrayList<>()
         );
     }

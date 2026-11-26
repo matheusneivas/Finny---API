@@ -40,7 +40,7 @@ public class OnboardingService {
     private final UserProfileRepository userProfileRepository;
     private final ProfileMapper profileMapper;
 
-    @Value("${app.cpf-secret}")
+    @Value("${app.cpf-secret:}")
     private String cpfSecret;
 
     // ── GET status ──────────────────────────────────────────────────────────
@@ -60,20 +60,27 @@ public class OnboardingService {
             throw new BusinessException("Usuário deve ter pelo menos 18 anos");
         }
 
-        if (!CpfUtils.isValid(request.getCpf())) {
-            throw new BusinessException("CPF inválido");
-        }
-        String cpfHash = CpfUtils.hash(request.getCpf(), cpfSecret);
-
         User user = findUser(userId);
 
-        // Permite re-envio do mesmo CPF (já associado a este usuário), bloqueia CPF de outro usuário
-        if (user.getCpfHash() == null || !user.getCpfHash().equals(cpfHash)) {
-            if (userRepository.existsByCpfHash(cpfHash)) {
-                throw new ResourceConflictException("CPF já possui uma conta cadastrada");
+        // CPF é opcional. Quando informado, valida e guarda apenas o hash (HMAC)
+        if (request.getCpf() != null && !request.getCpf().isBlank()) {
+            if (!CpfUtils.isValid(request.getCpf())) {
+                throw new BusinessException("CPF inválido");
             }
-            user.setCpfHash(cpfHash);
-            userRepository.save(user);
+            if (cpfSecret == null || cpfSecret.length() < 16 || cpfSecret.startsWith("finny-cpf-secret-change")) {
+                log.error("CPF_SECRET ausente ou inseguro: CPF não pode ser processado");
+                throw new BusinessException("Não foi possível validar o CPF agora. Continue sem informar o CPF.");
+            }
+            String cpfHash = CpfUtils.hash(request.getCpf(), cpfSecret);
+
+            // Permite re-envio do mesmo CPF (já associado a este usuário), bloqueia CPF de outro usuário
+            if (user.getCpfHash() == null || !user.getCpfHash().equals(cpfHash)) {
+                if (userRepository.existsByCpfHash(cpfHash)) {
+                    throw new ResourceConflictException("CPF já possui uma conta cadastrada");
+                }
+                user.setCpfHash(cpfHash);
+                userRepository.save(user);
+            }
         }
 
         UserProfile profile = getOrCreateProfile(user);

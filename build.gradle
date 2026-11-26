@@ -1,12 +1,15 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.2.0'
-    id 'io.spring.dependency-management' version '1.1.4'
+    id 'org.springframework.boot' version '3.5.7'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'com.finny'
 version = '1.0.0'
-sourceCompatibility = '17'
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
 
 configurations {
     compileOnly {
@@ -32,9 +35,9 @@ dependencies {
     runtimeOnly 'com.h2database:h2'
 
     // JWT
-    implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
-    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
-    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'
@@ -47,9 +50,10 @@ dependencies {
 
     // Flyway
     implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-database-postgresql'
 
     // OpenAPI/Swagger
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13'
 
     // Opcional: Actuator para health checks
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -58,7 +62,13 @@ dependencies {
     implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
     // Firebase Admin SDK (push notifications)
-    implementation 'com.google.firebase:firebase-admin:9.2.0'
+    implementation 'com.google.firebase:firebase-admin:9.4.3'
+
+    // Claude (Anthropic) SDK oficial
+    implementation 'com.anthropic:anthropic-java:3.3.0'
+
+    // Rate limiting em memória (cache com expiração)
+    implementation 'com.github.ben-manes.caffeine:caffeine'
 
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -72,8 +82,14 @@ tasks.named('test') {
 
 // Configuração para MapStruct + Lombok
 tasks.withType(JavaCompile) {
+    options.release = 17
     options.compilerArgs += [
         '-Amapstruct.defaultComponentModel=spring',
         '-Amapstruct.unmappedTargetPolicy=WARN'
     ]
+}
+
+// Gera só o jar executável (evita o "-plain.jar" extra no build/libs)
+tasks.named('jar') {
+    enabled = false
 }

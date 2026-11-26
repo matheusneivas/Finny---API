@@ -1,6 +1,7 @@
 package com.finny.api.presentation.controller;
 
 import com.finny.api.application.dto.request.LoginRequest;
+import com.finny.api.application.dto.request.LogoutRequest;
 import com.finny.api.application.dto.request.RefreshTokenRequest;
 import com.finny.api.application.dto.request.RegisterRequest;
 import com.finny.api.application.dto.response.ApiResponse;
@@ -37,16 +38,19 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    @Operation(summary = "Renovar access token usando refresh token")
+    @Operation(summary = "Renovar access token usando refresh token",
+        description = "Rotação: devolve um NOVO refresh token e invalida o anterior. Reusar um refresh token "
+            + "já trocado encerra a sessão (possível roubo de token).")
     public ResponseEntity<AuthResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
         AuthResponse response = authService.refreshToken(request);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/logout")
-    @Operation(summary = "Fazer logout")
-    public ResponseEntity<ApiResponse<Void>> logout() {
-        authService.logout();
+    @Operation(summary = "Fazer logout", description = "Revoga a sessão do refresh token informado. "
+        + "O access token atual expira sozinho em poucos minutos; o app deve descartá-lo.")
+    public ResponseEntity<ApiResponse<Void>> logout(@Valid @RequestBody(required = false) LogoutRequest request) {
+        authService.logout(request != null ? request.getRefreshToken() : null);
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .success(true)
                 .message("Logout realizado com sucesso")
