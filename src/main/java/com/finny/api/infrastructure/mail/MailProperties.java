@@ -13,8 +13,8 @@ public class MailProperties {
     /** resend, brevo, log (só desenvolvimento: escreve o código no log) ou none (não envia). */
     private String provider = "none";
 
-    /** Remetente. Ex.: "Fini <codigo@fini.com.br>". */
-    private String from = "Fini <onboarding@resend.dev>";
+    /** Remetente. Ex.: "Finny <codigo@finny.com.br>". */
+    private String from = "Finny <onboarding@resend.dev>";
 
     /** Chave do provedor (RESEND_API_KEY ou BREVO_API_KEY). */
     private String apiKey = "";

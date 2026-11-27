@@ -59,7 +59,7 @@ Regras importantes:
 ### Verificação de e-mail
 
 `user.emailVerified` diz se a pessoa já confirmou o e-mail. O cadastro já envia um código de 6
-dígitos (assunto: "123456 é seu código do Fini"). Até confirmar, as rotas de dados respondem
+dígitos (assunto: "123456 é seu código do Finny"). Até confirmar, as rotas de dados respondem
 **403** com `"code": "EMAIL_NOT_VERIFIED"`. Ficam livres: `/auth/**`, `/users/profile`,
 `/users/me/avatar`, `/onboarding/status` e `/notifications/token`.
 

@@ -142,7 +142,7 @@ class EmailVerificationIntegrationTest extends IntegrationTestBase {
         ArgumentCaptor<String> subject = ArgumentCaptor.forClass(String.class);
         org.mockito.Mockito.verify(mailSender, atLeastOnce()).send(eq(email), subject.capture(), anyString(), anyString());
         String s = subject.getValue();
-        assertThat(s).matches("\\d{6} é seu código do Fini");
+        assertThat(s).matches("\\d{6} é seu código do Finny");
         return s.substring(0, 6);
     }
 
