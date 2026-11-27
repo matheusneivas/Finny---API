@@ -108,8 +108,19 @@ desligada. Para ligar com o Resend:
 4. **Save, rebuild, and deploy**. Contas criadas antes disso continuam liberadas; quem se
    cadastrou com a verificação desligada recebe um código no próximo login.
 
-Alternativa sem domínio: Brevo (`MAIL_PROVIDER=brevo`, `BREVO_API_KEY`, e `MAIL_FROM` com um
-remetente verificado no Brevo).
+### Alternativa sem domínio: Brevo (é o que o Fini usa hoje)
+
+1. Crie a conta em https://brevo.com. Em **Senders, Domains & Dedicated IPs > Senders**, adicione
+   o Gmail que vai enviar os códigos e confirme pelo link que chega nele.
+2. Em **SMTP & API > API Keys**, gere uma chave (`xkeysib-...`).
+3. **Importante:** em **Configurações > Segurança > IPs autorizados** ("Authorised IPs"), desative
+   o bloqueio de IP das chaves de API. O Render muda de IP, e com o bloqueio ligado o Brevo recusa
+   todos os envios sem registrar nada em **Transacional > Logs**.
+4. No Render, crie `MAIL_PROVIDER` = `brevo`, `BREVO_API_KEY` = a chave e
+   `MAIL_FROM` = `Fini <seu-gmail@gmail.com>`. Depois, **Save, rebuild, and deploy**.
+
+Se o código não chegar, procure `mail` nos Logs do Render: a linha `Falha ao enviar e-mail` traz o
+status e o motivo dado pelo provedor.
 
 ## Planos e custos
 
