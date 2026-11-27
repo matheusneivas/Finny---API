@@ -33,7 +33,7 @@ public class CorsConfig {
         configuration.setAllowCredentials(false);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Idempotency-Key"));
-        configuration.setExposedHeaders(List.of("Retry-After"));
+        configuration.setExposedHeaders(List.of("Retry-After", "Content-Disposition"));
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
