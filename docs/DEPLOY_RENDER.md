@@ -126,6 +126,16 @@ O banco antigo do Render (`fini-db`) não é mais usado. O Render não apaga nad
 saído do `render.yaml`: quando a API estiver funcionando com o Supabase, apague o `fini-db` no
 painel (**fini-db > Settings > Delete Database**). Ele só tinha dados de teste.
 
+## Ler o log de requisições
+
+Cada requisição gera uma linha assim nos **Logs** do Render:
+
+`2026-11-27T03:16:44.319Z ACCESS POST /api/v1/auth/register 409 291ms`
+
+Ela mostra o método, o caminho, o status e quanto tempo levou (sem IP, dados nem senhas). Se o app
+diz "Não consegui falar com o servidor" e não aparece linha nenhuma no horário, a requisição nem
+chegou à API.
+
 ## Problemas comuns
 
 | Sintoma no log | Causa e solução |
