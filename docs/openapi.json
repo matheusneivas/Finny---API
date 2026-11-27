@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Fini API",
-    "description": "API do Fini, assistente financeiro com IA.\n\nAutenticação: envie `Authorization: Bearer <accessToken>`. O access token dura 30 minutos; renove com POST /api/v1/auth/refresh (o refresh token é de uso único e é trocado a cada renovação).\n\nErros seguem sempre o formato `{timestamp, status, error, message, errors}`. Respostas 429 trazem o header `Retry-After` (segundos).\n\nChat: a IA nunca grava dados sozinha. Ela devolve `proposedActions`, que o app mostra como cartões de confirmação; ao confirmar, o app chama o endpoint REST correspondente.",
+    "title": "Finny API",
+    "description": "API do Finny, assistente financeiro com IA.\n\nAutenticação: envie `Authorization: Bearer <accessToken>`. O access token dura 30 minutos; renove com POST /api/v1/auth/refresh (o refresh token é de uso único e é trocado a cada renovação).\n\nErros seguem sempre o formato `{timestamp, status, error, message, errors}`. Respostas 429 trazem o header `Retry-After` (segundos).\n\nChat: a IA nunca grava dados sozinha. Ela devolve `proposedActions`, que o app mostra como cartões de confirmação; ao confirmar, o app chama o endpoint REST correspondente.",
     "version": "2.0.0"
   },
   "security": [

@@ -44,7 +44,7 @@ public class AssistantPromptBuilder {
     private final Clock clock;
 
     public static final String STATIC_INSTRUCTIONS = """
-        Você é o Fini, assistente financeiro pessoal do app Fini. Você ajuda a pessoa a organizar \
+        Você é o Finny, assistente financeiro pessoal do app Finny. Você ajuda a pessoa a organizar \
         receitas e despesas do mês, acompanhar metas de economia (carro, casa, viagem, reserva) e \
         criar bons hábitos com dinheiro.
 

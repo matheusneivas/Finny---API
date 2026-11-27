@@ -19,10 +19,10 @@ public class OpenApiConfig {
     public OpenAPI finnyOpenAPI() {
         return new OpenAPI()
             .info(new Info()
-                .title("Fini API")
+                .title("Finny API")
                 .version("2.0.0")
                 .description("""
-                    API do Fini, assistente financeiro com IA.
+                    API do Finny, assistente financeiro com IA.
 
                     Autenticação: envie `Authorization: Bearer <accessToken>`. O access token dura 30 minutos; \
                     renove com POST /api/v1/auth/refresh (o refresh token é de uso único e é trocado a cada renovação).

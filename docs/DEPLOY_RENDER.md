@@ -29,7 +29,7 @@ A API roda no Render (arquivo `render.yaml` na raiz) e o banco PostgreSQL fica n
 
 ### Fechar a Data API (recomendado)
 
-As tabelas da API ficam no schema `fini`, que a Data API do Supabase não expõe. Como a API do Fini
+As tabelas da API ficam no schema `fini`, que a Data API do Supabase não expõe. Como a API do Finny
 não usa a Data API, dá para desligar de vez: **Project Settings > Data API** e desative
 **Enable Data API**.
 
@@ -90,7 +90,7 @@ Mande só essa URL na conversa (ela não é segredo).
   **fini-api > Environment** (botão de olho para revelar) e cole no n8n, no header
   `X-Internal-API-Key`.
 - **Versão web**: quando existir, coloque o domínio em `CORS_ALLOWED_ORIGINS`
-  (ex.: `https://app.fini.com.br`). O app mobile não precisa disso.
+  (ex.: `https://app.finny.com.br`). O app mobile não precisa disso.
 - **Novos deploys**: todo merge na `master` faz deploy automático.
 
 ## E-mails (código de verificação e "esqueci a senha")
@@ -104,11 +104,11 @@ desligada. Para ligar com o Resend:
 3. No Render, **fini-api > Environment**, crie:
    - `MAIL_PROVIDER` = `resend`
    - `RESEND_API_KEY` = a chave
-   - `MAIL_FROM` = `Fini <codigo@seu-dominio.com.br>`
+   - `MAIL_FROM` = `Finny <codigo@seu-dominio.com.br>`
 4. **Save, rebuild, and deploy**. Contas criadas antes disso continuam liberadas; quem se
    cadastrou com a verificação desligada recebe um código no próximo login.
 
-### Alternativa sem domínio: Brevo (é o que o Fini usa hoje)
+### Alternativa sem domínio: Brevo (é o que o Finny usa hoje)
 
 1. Crie a conta em https://brevo.com. Em **Senders, Domains & Dedicated IPs > Senders**, adicione
    o Gmail que vai enviar os códigos e confirme pelo link que chega nele.
@@ -117,7 +117,7 @@ desligada. Para ligar com o Resend:
    o bloqueio de IP das chaves de API. O Render muda de IP, e com o bloqueio ligado o Brevo recusa
    todos os envios sem registrar nada em **Transacional > Logs**.
 4. No Render, crie `MAIL_PROVIDER` = `brevo`, `BREVO_API_KEY` = a chave e
-   `MAIL_FROM` = `Fini <seu-gmail@gmail.com>`. Depois, **Save, rebuild, and deploy**.
+   `MAIL_FROM` = `Finny <seu-gmail@gmail.com>`. Depois, **Save, rebuild, and deploy**.
 
 Se o código não chegar, procure `mail` nos Logs do Render: a linha `Falha ao enviar e-mail` traz o
 status e o motivo dado pelo provedor.

@@ -1,6 +1,6 @@
-# Fini API
+# Finny API
 
-Backend do **Fini**, assistente financeiro com IA: planilha de receitas e despesas do mês,
+Backend do **Finny**, assistente financeiro com IA: planilha de receitas e despesas do mês,
 metas de economia (carro, casa, viagem) e um chat com IA que sugere lançamentos e metas
 para o usuário confirmar no app.
 
