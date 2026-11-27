@@ -102,11 +102,32 @@ o endpoint normal com o `payload`:
 | `CREATE_GOAL` | `POST /goals` com `payload` (é um `GoalRequest`) |
 | `CONTRIBUTE_GOAL` | `POST /goals/{payload.goalId}/contribute` com `{ "amount": payload.amount }` |
 
+Ao confirmar, mande o cabeçalho `Idempotency-Key: <id da ação>` na chamada. Se o app repetir a
+chamada (rede caiu, toque duplo, app reaberto), a API devolve o mesmo recurso criado da primeira
+vez, com o mesmo status e o cabeçalho `Idempotent-Replayed: true`, sem criar outro. O cartão também
+passa a `CONFIRMED` sozinho.
+
 O servidor já validou o payload e resolveu a categoria e os ids (só do próprio usuário). Mesmo
 assim, os endpoints validam de novo ao confirmar, então trate 400/404/422 normalmente.
 
 Para `CREATE_TRANSACTION` com `frequency` diferente de `ONCE` e `repeatCount` maior que 1, a API
 cria as repetições (parcelas) automaticamente.
+
+### Estado dos cartões
+
+Cada item de `proposedActions` traz `status`: `PENDING`, `CONFIRMED` ou `DISCARDED`.
+
+`PUT /chat/actions/{actionId}` com `{ "status": "CONFIRMED" | "DISCARDED" }` responde 204. É
+idempotente. Responde 404 para ação de outro usuário ou inexistente, 409 ao descartar algo já
+confirmado (confirmado é definitivo) e 400 para `PENDING` ou valor inválido. Descartado pode virar
+confirmado depois.
+
+### Idempotency-Key
+
+Aceito em `POST /transactions`, `POST /goals` e `POST /goals/{id}/contribute`: até 64 caracteres
+(letras, números, `.`, `_`, `:`, `-`). A chave vale por usuário e fica guardada por 45 dias. A mesma
+chave usada em outra operação recebe 422. Se a criação falhar (400, 404 etc.), a chave não é
+gasta e pode ser reenviada.
 
 ### Histórico e uso
 

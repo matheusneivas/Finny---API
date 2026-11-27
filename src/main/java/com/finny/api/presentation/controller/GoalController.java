@@ -6,6 +6,7 @@ import com.finny.api.application.dto.response.ApiResponse;
 import com.finny.api.application.dto.response.GoalProgressResponse;
 import com.finny.api.application.dto.response.GoalResponse;
 import com.finny.api.application.service.GoalService;
+import com.finny.api.application.service.IdempotencyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,6 +29,7 @@ import java.util.UUID;
 public class GoalController {
 
     private final GoalService goalService;
+    private final IdempotencyService idempotencyService;
 
     @GetMapping
     @Operation(summary = "Listar metas do usuário")
@@ -38,14 +40,15 @@ public class GoalController {
     }
 
     @PostMapping
-    @Operation(summary = "Criar nova meta")
+    @Operation(summary = "Criar nova meta", description = "Aceita o cabeçalho Idempotency-Key.")
     public ResponseEntity<GoalResponse> createGoal(
             @AuthenticationPrincipal UserDetails userDetails,
+            @RequestHeader(value = IdempotencyService.HEADER, required = false) String idempotencyKey,
             @Valid @RequestBody GoalRequest request) {
 
         UUID userId = UUID.fromString(userDetails.getUsername());
-        GoalResponse response = goalService.createGoal(userId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return idempotencyService.execute(userId, idempotencyKey, "POST /goals", HttpStatus.CREATED,
+            GoalResponse.class, () -> goalService.createGoal(userId, request));
     }
 
     @GetMapping("/{id}")
@@ -87,14 +90,15 @@ public class GoalController {
     }
 
     @PostMapping("/{id}/contribute")
-    @Operation(summary = "Adicionar contribuição à meta")
+    @Operation(summary = "Adicionar contribuição à meta", description = "Aceita o cabeçalho Idempotency-Key.")
     public ResponseEntity<GoalProgressResponse> contributeToGoal(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable UUID id,
+            @RequestHeader(value = IdempotencyService.HEADER, required = false) String idempotencyKey,
             @Valid @RequestBody GoalContributionRequest request) {
 
         UUID userId = UUID.fromString(userDetails.getUsername());
-        GoalProgressResponse response = goalService.contributeToGoal(userId, id, request);
-        return ResponseEntity.ok(response);
+        return idempotencyService.execute(userId, idempotencyKey, "POST /goals/" + id + "/contribute", HttpStatus.OK,
+            GoalProgressResponse.class, () -> goalService.contributeToGoal(userId, id, request));
     }
 }

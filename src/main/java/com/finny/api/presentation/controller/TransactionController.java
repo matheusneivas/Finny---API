@@ -5,6 +5,7 @@ import com.finny.api.application.dto.response.ApiResponse;
 import com.finny.api.application.dto.response.CategorySummaryResponse;
 import com.finny.api.application.dto.response.TransactionResponse;
 import com.finny.api.application.dto.response.TransactionSummaryResponse;
+import com.finny.api.application.service.IdempotencyService;
 import com.finny.api.application.service.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -32,6 +33,7 @@ import java.util.UUID;
 public class TransactionController {
 
     private final TransactionService transactionService;
+    private final IdempotencyService idempotencyService;
 
     @GetMapping
     @Operation(summary = "Listar transações do usuário",
@@ -49,14 +51,16 @@ public class TransactionController {
     }
 
     @PostMapping
-    @Operation(summary = "Criar nova transação")
+    @Operation(summary = "Criar nova transação",
+               description = "Aceita o cabeçalho Idempotency-Key: repetir a mesma chave devolve a transação criada da primeira vez.")
     public ResponseEntity<TransactionResponse> createTransaction(
             @AuthenticationPrincipal UserDetails userDetails,
+            @RequestHeader(value = IdempotencyService.HEADER, required = false) String idempotencyKey,
             @Valid @RequestBody TransactionRequest request) {
 
         UUID userId = UUID.fromString(userDetails.getUsername());
-        TransactionResponse response = transactionService.createTransaction(userId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return idempotencyService.execute(userId, idempotencyKey, "POST /transactions", HttpStatus.CREATED,
+            TransactionResponse.class, () -> transactionService.createTransaction(userId, request));
     }
 
     @GetMapping("/{id}")

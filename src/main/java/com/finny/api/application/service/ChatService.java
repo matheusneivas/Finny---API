@@ -19,6 +19,7 @@ import com.finny.api.application.service.assistant.ChatUsageService.MonthlyUsage
 import com.finny.api.domain.entity.ChatMessage;
 import com.finny.api.domain.entity.User;
 import com.finny.api.domain.enums.MessageRole;
+import com.finny.api.domain.enums.ProposedActionStatus;
 import com.finny.api.domain.enums.UserPlan;
 import com.finny.api.domain.repository.ChatMessageRepository;
 import com.finny.api.domain.repository.UserRepository;
@@ -39,6 +40,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -58,6 +60,7 @@ public class ChatService {
 
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
+    private final ChatActionService chatActionService;
     private final AiChatProvider aiChatProvider;
     private final AssistantPromptBuilder promptBuilder;
     private final AssistantToolbox toolbox;
@@ -137,6 +140,9 @@ public class ChatService {
         assistantMessage.setTokensUsed(result.totalTokens());
         assistantMessage.setProposedActions(actions.isEmpty() ? null : writeActions(actions));
         assistantMessage = chatMessageRepository.save(assistantMessage);
+        if (!actions.isEmpty()) {
+            chatActionService.registerPending(userId, assistantMessage.getId(), actions);
+        }
 
         log.info("Resposta enviada | user: {} | tokens: {} | propostas: {}", userId, result.totalTokens(), actions.size());
 
@@ -152,13 +158,16 @@ public class ChatService {
 
     @Transactional(readOnly = true)
     public Page<ChatHistoryResponse> getHistory(UUID userId, Pageable pageable) {
-        return chatMessageRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
-            .map(this::toHistoryResponse);
+        Page<ChatMessage> page = chatMessageRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        Map<String, ProposedActionStatus> statuses = chatActionService.statusesFor(
+            page.getContent().stream().filter(m -> m.getProposedActions() != null).map(ChatMessage::getId).toList());
+        return page.map(m -> toHistoryResponse(m, statuses));
     }
 
     @Transactional
     public void deleteHistory(UUID userId) {
         log.info("Apagando histórico do chat | user: {}", userId);
+        chatActionService.deleteAllForUser(userId);
         chatMessageRepository.deleteByUserId(userId);
     }
 
@@ -183,13 +192,15 @@ public class ChatService {
         List<ChatMessage> recent = chatMessageRepository
             .findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(0, chatProperties.getHistorySize()))
             .getContent();
+        Map<String, ProposedActionStatus> statuses = chatActionService.statusesFor(
+            recent.stream().filter(m -> m.getProposedActions() != null).map(ChatMessage::getId).toList());
         List<AiMessage> history = new ArrayList<>();
         for (int i = recent.size() - 1; i >= 0; i--) {
             ChatMessage m = recent.get(i);
             String content = m.getContent();
             if (m.getRole() == MessageRole.ASSISTANT && m.getProposedActions() != null) {
-                content += "\n[Ações propostas nesta resposta e enviadas para confirmação: "
-                    + summaries(m.getProposedActions()) + ". Confira nos dados atuais se foram aplicadas.]";
+                content += "\n[Ações propostas nesta resposta (situação do cartão): "
+                    + summaries(m.getProposedActions(), statuses) + ". Confira nos dados atuais antes de propor de novo.]";
             }
             history.add(m.getRole() == MessageRole.USER ? AiMessage.user(content) : AiMessage.assistant(content));
         }
@@ -212,19 +223,31 @@ public class ChatService {
         return result;
     }
 
-    private ChatHistoryResponse toHistoryResponse(ChatMessage m) {
+    private ChatHistoryResponse toHistoryResponse(ChatMessage m, Map<String, ProposedActionStatus> statuses) {
+        List<ProposedActionResponse> actions = readActions(m.getProposedActions());
+        actions.forEach(a -> a.setStatus(statuses.getOrDefault(a.getId(), ProposedActionStatus.PENDING)));
         return ChatHistoryResponse.builder()
             .id(m.getId())
             .role(m.getRole())
             .content(m.getContent())
             .tokensUsed(m.getTokensUsed())
             .createdAt(m.getCreatedAt())
-            .proposedActions(readActions(m.getProposedActions()))
+            .proposedActions(actions)
             .build();
     }
 
-    private String summaries(String json) {
-        return String.join("; ", readActions(json).stream().map(ProposedActionResponse::getSummary).toList());
+    private String summaries(String json, Map<String, ProposedActionStatus> statuses) {
+        return String.join("; ", readActions(json).stream()
+            .map(a -> a.getSummary() + " (" + statusLabel(statuses.getOrDefault(a.getId(), ProposedActionStatus.PENDING)) + ")")
+            .toList());
+    }
+
+    private static String statusLabel(ProposedActionStatus status) {
+        return switch (status) {
+            case CONFIRMED -> "confirmada pelo usuário";
+            case DISCARDED -> "descartada pelo usuário";
+            case PENDING -> "aguardando confirmação";
+        };
     }
 
     private String writeActions(List<ProposedActionResponse> actions) {

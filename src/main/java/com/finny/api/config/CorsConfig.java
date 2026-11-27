@@ -32,7 +32,7 @@ public class CorsConfig {
         // Autenticação via header Authorization: não precisamos de cookies cross-origin
         configuration.setAllowCredentials(false);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Idempotency-Key"));
         configuration.setExposedHeaders(List.of("Retry-After"));
         configuration.setMaxAge(3600L);
 
