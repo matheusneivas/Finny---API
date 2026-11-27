@@ -56,6 +56,26 @@ Regras importantes:
   roubo de token e encerra a sessão inteira (todos os tokens daquele login).
 - Senha: 8 a 72 caracteres, com maiúscula, minúscula e número. E-mail não diferencia maiúsculas.
 
+### Verificação de e-mail
+
+`user.emailVerified` diz se a pessoa já confirmou o e-mail. O cadastro já envia um código de 6
+dígitos (assunto: "123456 é seu código do Fini"). Até confirmar, as rotas de dados respondem
+**403** com `"code": "EMAIL_NOT_VERIFIED"`. Ficam livres: `/auth/**`, `/users/profile`,
+`/users/me/avatar`, `/onboarding/status` e `/notifications/token`.
+
+| Rota | Corpo | Resposta |
+|---|---|---|
+| `POST /auth/email/verify` (Bearer) | `{code}` | `User` atualizado. 400 se o código estiver errado ou vencido |
+| `POST /auth/email/resend` (Bearer) | | 204. 429 com `Retry-After` se pedir antes de 60 s |
+| `POST /auth/password/forgot` | `{email}` | sempre 204, exista ou não a conta. 429 com `Retry-After` antes de 60 s |
+| `POST /auth/password/reset` | `{email, code, newPassword}` | 204. Encerra todas as sessões; depois faça login |
+
+- O código vale 15 minutos e aceita 5 tentativas; depois, peça outro. Só o último código enviado vale.
+- No máximo 10 códigos por dia por conta e finalidade.
+- Login de quem ainda não verificou envia um código novo se não houver um válido.
+- Sem provedor de e-mail configurado no servidor (`MAIL_PROVIDER=none`), a verificação fica
+  desligada e `emailVerified` vem `true`.
+
 ## Chat com a IA
 
 ### Enviar mensagem
@@ -183,6 +203,7 @@ não contam, e uma mensagem que falhou por indisponibilidade da IA (503) é devo
 |---|---|
 | `POST /auth/login`, `POST /auth/register` | 10 por minuto por IP |
 | `POST /auth/refresh` | 30 por minuto por IP |
+| `POST /auth/email/*`, `POST /auth/password/*` | 10 por minuto por IP (além do intervalo de 60 s por código) |
 | `POST /chat/messages` | 15 por minuto por usuário |
 | `POST /ocr/*` | 10 por minuto por usuário |
 | `PUT /users/me/avatar` | 10 por hora por usuário |
