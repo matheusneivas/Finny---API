@@ -56,6 +56,21 @@ public class AuthService {
         .maximumSize(100_000)
         .build();
 
+    /**
+     * Trava por conta contra adivinhação de senha vinda de vários IPs (o rate limit é por IP):
+     * depois de {@value #MAX_LOGIN_FAILURES} erros em 15 minutos, o login daquele e-mail espera.
+     * Vale também para e-mail inexistente, para não revelar se a conta existe.
+     */
+    static final int MAX_LOGIN_FAILURES = 10;
+    private static final java.time.Duration LOGIN_LOCK_WINDOW = java.time.Duration.ofMinutes(15);
+    private final Cache<String, java.util.concurrent.atomic.AtomicInteger> loginFailures = Caffeine.newBuilder()
+        .expireAfterWrite(LOGIN_LOCK_WINDOW)
+        .maximumSize(200_000)
+        .build();
+
+    /** Versão dos Termos de Uso e da Política de Privacidade que o cadastro aceita. */
+    public static final String TERMS_VERSION = "2026-11-27";
+
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         String email = normalizeEmail(request.getEmail());
@@ -87,6 +102,11 @@ public class AuthService {
         user.setPhone(phone);
         user.setPlan(UserPlan.FREE);
         user.setEmailVerified(false);
+        if (Boolean.TRUE.equals(request.getAcceptedTerms())) {
+            // Registro de quando a pessoa aceitou os Termos e a Política de Privacidade (LGPD)
+            user.setTermsAcceptedAt(java.time.LocalDateTime.now());
+            user.setTermsVersion(TERMS_VERSION);
+        }
         user = userRepository.save(user);
 
         log.info("Usuário registrado | id: {}", user.getId());
@@ -100,8 +120,24 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
         String email = normalizeEmail(request.getEmail());
 
+        java.util.concurrent.atomic.AtomicInteger failures = loginFailures.getIfPresent(email);
+        if (failures != null && failures.get() >= MAX_LOGIN_FAILURES) {
+            throw new TooManyRequestsException(
+                "Muitas tentativas de login nesta conta. Espere 15 minutos ou use \"Esqueci a senha\".",
+                LOGIN_LOCK_WINDOW.toSeconds());
+        }
+
         // Lança BadCredentialsException (401 genérico) para e-mail inexistente ou senha errada
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, request.getPassword()));
+        try {
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, request.getPassword()));
+        } catch (org.springframework.security.core.AuthenticationException e) {
+            int count = loginFailures.get(email, k -> new java.util.concurrent.atomic.AtomicInteger()).incrementAndGet();
+            if (count == MAX_LOGIN_FAILURES) {
+                log.warn("Login travado por 15 min após {} senhas erradas seguidas", MAX_LOGIN_FAILURES);
+            }
+            throw e;
+        }
+        loginFailures.invalidate(email);
 
         User user = userRepository.findByEmailIgnoreCase(email)
             .orElseThrow(() -> new UnauthorizedException("E-mail ou senha incorretos"));

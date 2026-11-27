@@ -40,6 +40,9 @@ public class EmailVerificationFilter extends OncePerRequestFilter {
             || uri.startsWith("/api/v1/auth/")
             || uri.equals("/api/v1/users/profile")
             || uri.equals("/api/v1/users/me/avatar")
+            // Direitos LGPD valem mesmo sem e-mail confirmado
+            || uri.equals("/api/v1/users/me/export")
+            || uri.equals("/api/v1/users/me/delete")
             || uri.equals("/api/v1/onboarding/status")
             || uri.startsWith("/api/v1/notifications/token");
     }

@@ -103,6 +103,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
         if (post && uri.equals("/api/v1/auth/refresh")) {
             return new Rule("refresh", properties.getRefreshPerMinute(), true);
         }
+        if (post && uri.equals("/api/v1/users/me/delete")) {
+            // Pede a senha: limite baixo contra adivinhação com um token roubado
+            return new Rule("account-delete", 5, false);
+        }
+        if ("GET".equalsIgnoreCase(request.getMethod()) && uri.equals("/api/v1/users/me/export")) {
+            return new Rule("export", 5, false);
+        }
         if (post && uri.equals("/api/v1/chat/messages")) {
             return new Rule("chat", properties.getChatPerMinute(), false);
         }

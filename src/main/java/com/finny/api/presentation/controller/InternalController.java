@@ -21,7 +21,7 @@ public class InternalController {
             @PathVariable String callbackToken,
             @RequestBody OcrCallbackRequest ocrResult) {
 
-        log.info("Received OCR callback for token: {}", callbackToken);
+        log.info("Callback de OCR recebido"); // o token é segredo: não vai para o log
 
         // TODO: Implementar lógica de callback
         // 1. Buscar OcrProcessingQueue pelo callbackToken

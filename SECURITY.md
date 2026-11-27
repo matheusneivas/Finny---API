@@ -18,6 +18,8 @@
 - Logout revoga a sessão. Tokens vencidos são limpos diariamente.
 - BCrypt custo 12; senha limitada a 72 bytes (limite do BCrypt). E-mail normalizado.
 - Mensagem genérica para e-mail inexistente e senha errada.
+- Trava por conta: 10 senhas erradas em 15 min bloqueiam o login daquele e-mail por 15 min (mesmo
+  vindo de IPs diferentes; vale também para e-mail inexistente, para não revelar cadastro).
 - Verificação de e-mail e recuperação de senha com código de 6 dígitos: guardado só como HMAC,
   vale 15 min, 5 tentativas, um código válido por vez, 60 s entre envios e 10 por dia. "Esqueci a
   senha" responde igual para e-mail existente ou não, e o envio acontece fora da requisição (sem
@@ -46,13 +48,20 @@
   antes de decodificar, imagem redesenhada e salva como JPEG 512x512 (remove EXIF/GPS e conteúdo
   escondido). Servida só para o dono, com `nosniff` e `Content-Security-Policy: default-src 'none'`.
 - Erros nunca expõem stack trace nem mensagens internas.
-- Headers: `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`,
+- Headers: `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'` nas rotas `/api`,
+  `Permissions-Policy`, `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`,
   `Cache-Control: no-store`; HSTS quando servido via HTTPS.
 - CORS fechado por padrão; libere só as origens da versão web.
 
 **Privacidade (LGPD)**
-- CPF opcional e guardado apenas como HMAC.
-- Logs usam id do usuário, não e-mail.
+- CPF guardado apenas como HMAC (nunca o número).
+- Logs usam id do usuário, não e-mail; tokens de callback não vão para o log.
+- `GET /api/v1/users/me/export`: cópia de todos os dados do titular em JSON (art. 18, II e V).
+- `POST /api/v1/users/me/delete` com `{ "password" }`: exclui a conta e todos os dados na hora,
+  cancelando antes a assinatura no cartão. Fica só o HMAC do CPF do teste grátis (sem ligação com a conta).
+- Cadastro registra quando e qual versão dos Termos/Política foi aceita (`acceptedTerms`).
+- Supabase: RLS ligada em todas as tabelas do schema da API e nenhum acesso para os papéis
+  `anon`/`authenticated` da Data API (migração V15). A API conecta como dona das tabelas.
 
 **Cadeia de suprimentos**
 - Spring Boot 3.5 e dependências atualizadas; Dependabot semanal; CI roda os testes em cada PR.
@@ -70,7 +79,7 @@
 
 ## Pendências conhecidas
 
-- Exclusão de conta e exportação de dados (direitos do titular na LGPD) ainda não existem.
+- Tabelas criadas depois da V15 precisam de `ENABLE ROW LEVEL SECURITY` na própria migração.
 - OCR (`/ocr/process`) ainda é um esboço: a imagem não é armazenada nem enviada ao n8n.
 
 ## Reportar uma vulnerabilidade

@@ -38,4 +38,7 @@ public class RegisterRequest {
     @NotBlank(message = "Telefone é obrigatório")
     @Pattern(regexp = "^[\\d\\s()+.-]{10,20}$", message = "Telefone inválido")
     private String phone;
+
+    /** true quando a pessoa marcou "Li e aceito os Termos de Uso e a Política de Privacidade". */
+    private Boolean acceptedTerms;
 }

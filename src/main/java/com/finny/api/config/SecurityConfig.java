@@ -52,7 +52,14 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .headers(headers -> headers
                 .referrerPolicy(r -> r.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
-                .frameOptions(frame -> frame.deny()))
+                .frameOptions(frame -> frame.deny())
+                // A API só devolve JSON: nada de scripts, frames ou recursos externos nas respostas dela
+                .addHeaderWriter(new org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter(
+                    request -> request.getRequestURI().startsWith("/api/"),
+                    new org.springframework.security.web.header.writers.StaticHeadersWriter(
+                        "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")))
+                .addHeaderWriter(new org.springframework.security.web.header.writers.StaticHeadersWriter(
+                    "Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()")))
             .exceptionHandling(exception -> exception
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 .accessDeniedHandler((request, response, denied) ->

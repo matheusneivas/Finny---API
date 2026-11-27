@@ -33,7 +33,7 @@ Todas as falhas seguem o mesmo formato:
 
 | Rota | Corpo | Resposta |
 |---|---|---|
-| `POST /auth/register` | `{email, password, fullName, cpf, phone}` | `AuthResponse` (201) |
+| `POST /auth/register` | `{email, password, fullName, cpf, phone, acceptedTerms}` | `AuthResponse` (201) |
 | `POST /auth/login` | `{email, password}` | `AuthResponse` |
 | `POST /auth/refresh` | `{refreshToken}` | `AuthResponse` com **novo** refresh token |
 | `POST /auth/logout` | `{refreshToken}` | encerra a sessão |
@@ -58,6 +58,10 @@ Regras importantes:
 - Cadastro: `cpf` (com ou sem pontuação) e `phone` (celular com DDD, ex.: `(11) 98765-4321`) são
   obrigatórios. CPF inválido responde 422; CPF que já tem conta responde 409. A API guarda só o HMAC do CPF
   e o telefone em dígitos (`user.phone`).
+- `acceptedTerms: true` quando a pessoa marcou o aceite dos Termos e da Política de Privacidade; a API
+  guarda data e versão. Opcional por compatibilidade, mas o app deve sempre mandar.
+- Login: 10 senhas erradas seguidas em 15 minutos travam o login daquele e-mail por 15 minutos (429 com
+  `Retry-After`), mesmo com a senha certa.
 - Senha: 8 a 72 caracteres, com maiúscula, minúscula e número. E-mail não diferencia maiúsculas.
 
 ### Verificação de e-mail
@@ -225,6 +229,15 @@ Como funciona:
 - No cadastro: chame `POST /auth/register` e, com o token recebido, `PUT /users/me/avatar`.
 - Limite: 10 envios por hora por usuário.
 
+## Meus dados e excluir conta (LGPD)
+
+| Rota | Corpo | Resposta |
+|---|---|---|
+| `GET /users/me/export` | | JSON com conta, perfil, lançamentos, metas, categorias, conversas e assinatura (`Content-Disposition: attachment`) |
+| `POST /users/me/delete` | `{password}` | 204. Senha errada: 422. Apaga tudo na hora e cancela a renovação no cartão; depois disso tokens antigos dão 401 |
+
+As duas rotas funcionam mesmo sem e-mail confirmado.
+
 ## Push
 
 - `POST /notifications/token` com `{ "token": "<expo/fcm token>", "platform": "IOS" | "ANDROID" | "WEB" }`
@@ -244,4 +257,5 @@ Como funciona:
 | `POST /chat/messages` | 15 por minuto por usuário |
 | `POST /ocr/*` | 10 por minuto por usuário |
 | `PUT /users/me/avatar` | 10 por hora por usuário |
+| `POST /users/me/delete`, `GET /users/me/export` | 5 por minuto por usuário |
 | Demais | 300 por minuto por usuário |

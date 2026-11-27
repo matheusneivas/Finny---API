@@ -54,6 +54,13 @@ public class User {
     @Column(length = 16)
     private String avatarVersion;
 
+    /** Quando aceitou os Termos de Uso e a Política de Privacidade (null = conta anterior a isso). */
+    @Column
+    private LocalDateTime termsAcceptedAt;
+
+    @Column(length = 20)
+    private String termsVersion;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
