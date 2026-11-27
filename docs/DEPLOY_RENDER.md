@@ -1,7 +1,7 @@
 # Colocar a API no ar no Render
 
-O arquivo `render.yaml` na raiz descreve tudo (API + banco PostgreSQL). O Render lê esse arquivo
-e cria os serviços sozinho. Você só precisa fazer os passos abaixo.
+A API roda no Render (arquivo `render.yaml` na raiz) e o banco PostgreSQL fica no Supabase
+(plano grátis, não expira). Você só precisa fazer os passos abaixo.
 
 > Nunca cole chaves ou senhas em chats, issues ou commits. Elas ficam só no painel do Render
 > e no console da Anthropic.
@@ -16,13 +16,57 @@ e cria os serviços sozinho. Você só precisa fazer os passos abaixo.
 4. Em **API Keys**, clique em **Create Key**, dê o nome `fini-render` e copie a chave
    (começa com `sk-ant-`). Ela aparece uma única vez. Guarde até o passo 2.
 
+## Banco no Supabase
+
+### Criar o projeto
+
+1. Entre em https://supabase.com/dashboard e clique em **New project**.
+2. Nome: `fini`. Em **Database Password**, clique em **Generate a password** e guarde a senha
+   num lugar seguro (gerenciador de senhas). Ela não aparece de novo.
+3. Em **Region**, escolha **East US (North Virginia)**. A API fica na Virgínia, e banco e API
+   na mesma região deixam o app bem mais rápido.
+4. Clique em **Create new project** e espere uns 2 minutos.
+
+### Fechar a Data API (recomendado)
+
+As tabelas da API ficam no schema `fini`, que a Data API do Supabase não expõe. Como a API do Fini
+não usa a Data API, dá para desligar de vez: **Project Settings > Data API** e desative
+**Enable Data API**.
+
+### Pegar os dados de conexão
+
+1. No topo do projeto, clique em **Connect**.
+2. Escolha a aba **Connection String** e, em **Method**, selecione **Session pooler**
+   (não use "Direct connection", que só funciona com IPv6, nem "Transaction pooler").
+3. Você vai ver algo assim:
+   `postgresql://postgres.abcdefghij:[YOUR-PASSWORD]@aws-1-us-east-1.pooler.supabase.com:5432/postgres`
+   - **Host**: o trecho depois do `@` e antes de `:5432` (ex.: `aws-1-us-east-1.pooler.supabase.com`)
+   - **Usuário**: o trecho depois de `postgresql://` e antes de `:` (ex.: `postgres.abcdefghij`)
+   - **Senha**: a que você guardou no passo 2
+
+### Colocar no Render
+
+1. No Render, abra **fini-api > Environment**.
+2. Edite (ou crie) estas três variáveis, colando os valores do Supabase:
+   - `DB_HOST` = host
+   - `DB_USERNAME` = usuário
+   - `DB_PASSWORD` = senha
+3. Confira que existem também `DB_PORT=5432`, `DB_NAME=postgres`, `DB_SCHEMA=fini` e
+   `DB_URL_PARAMS=?sslmode=require` (o Blueprint cria essas sozinho).
+4. Clique em **Save, rebuild, and deploy**.
+5. Nos **Logs**, deve aparecer `Successfully applied ... migrations to schema "fini"` e
+   `Started FinnyApplication`.
+
+O plano grátis do Supabase **pausa o projeto depois de 7 dias sem nenhum acesso**. Os dados não
+se perdem: basta abrir o projeto no painel e clicar em **Restore**.
+
 ## 2. Criar os serviços no Render
 
 1. No painel do Render (https://dashboard.render.com), clique em **New > Blueprint**.
 2. Conecte o GitHub, se pedir, e dê acesso ao repositório **Finny---API**.
-3. Escolha o repositório e a branch **master**. O Render mostra dois itens:
-   `fini-db` (PostgreSQL) e `fini-api` (Web Service).
-4. Ele vai pedir o valor de **AI_API_KEY**: cole a chave da Anthropic do passo 1.
+3. Escolha o repositório e a branch **master**. O Render mostra o `fini-api` (Web Service).
+4. Ele vai pedir **AI_API_KEY** (chave da Anthropic do passo 1) e os dados do banco
+   (`DB_HOST`, `DB_USERNAME`, `DB_PASSWORD`, veja "Banco no Supabase" acima).
 5. Clique em **Apply** (ou **Deploy Blueprint**).
 
 As outras chaves (`JWT_SECRET`, `INTERNAL_API_KEY`, `CPF_SECRET`) são geradas pelo próprio
@@ -56,16 +100,21 @@ O `render.yaml` começa no plano **free**:
 | | Free | Pago (recomendado para uso real) |
 |---|---|---|
 | API | "Dorme" após 15 min sem uso; a 1ª requisição depois disso leva ~1 min | Starter, US$ 7/mês, sempre ligada |
-| Banco | **Expira em 30 dias** (os dados são apagados) | Basic 256 MB, cerca de US$ 6/mês, com backups |
+| Banco (Supabase) | 500 MB, não expira; pausa após 7 dias sem acesso (é só reativar) | Pro, US$ 25/mês, com backups diários |
 
-Para trocar: no painel, abra o serviço ou o banco e use **Settings > Instance Type** (ou
-**Upgrade**). Faça isso antes de ter usuários de verdade e antes dos 30 dias do banco free.
+Para trocar a API: no painel do Render, abra o serviço e use **Settings > Instance Type**.
+
+O banco antigo do Render (`fini-db`) não é mais usado. O Render não apaga nada sozinho por ter
+saído do `render.yaml`: quando a API estiver funcionando com o Supabase, apague o `fini-db` no
+painel (**fini-db > Settings > Delete Database**). Ele só tinha dados de teste.
 
 ## Problemas comuns
 
 | Sintoma no log | Causa e solução |
 |---|---|
 | `JWT_SECRET ausente ou curto demais` | Variável apagada. Em **Environment**, crie `JWT_SECRET` com **Generate** |
-| `Connection refused` / erro de banco | O banco ainda está sendo criado; aguarde e clique em **Manual Deploy** |
+| `Connection refused`, `password authentication failed` ou `Tenant or user not found` | Confira `DB_HOST`, `DB_USERNAME` (com o `.abcdefghij` no fim) e `DB_PASSWORD`; use o **Session pooler** |
+| `Max client connections reached` | Diminua `DB_POOL_SIZE` (ex.: 3) |
+| Projeto do Supabase pausado | Abra o projeto no painel do Supabase e clique em **Restore** |
 | Chat responde 503 | `AI_API_KEY` errada ou sem créditos na Anthropic |
 | `OutOfMemoryError` | Plano free tem 512 MB; suba para Starter |
