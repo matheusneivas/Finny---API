@@ -20,11 +20,12 @@ Todas as falhas seguem o mesmo formato:
 | Status | Quando |
 |---|---|
 | 400 | Validação (`errors` traz o campo e a mensagem), JSON mal formatado, parâmetro inválido |
+| 402 | Limite do plano grátis (`"code": "PLAN_LIMIT_REACHED"`): mostre a tela do Premium |
 | 401 | Token ausente, inválido ou expirado. Tente `/auth/refresh` uma vez; se falhar, mande para o login |
 | 403 | Acesso negado |
 | 404 | Recurso não existe ou não pertence ao usuário |
 | 409 | Conflito (ex.: e-mail já cadastrado) |
-| 422 | Regra de negócio (ex.: limite mensal do chat atingido) |
+| 422 | Regra de negócio (ex.: CPF inválido, limite do chat no Premium) |
 | 429 | Muitas requisições. Header `Retry-After` diz em quantos segundos tentar de novo |
 | 503 | Assistente de IA indisponível (a mensagem não é descontada do limite) |
 
@@ -32,7 +33,7 @@ Todas as falhas seguem o mesmo formato:
 
 | Rota | Corpo | Resposta |
 |---|---|---|
-| `POST /auth/register` | `{email, password, fullName}` | `AuthResponse` (201) |
+| `POST /auth/register` | `{email, password, fullName, cpf, phone}` | `AuthResponse` (201) |
 | `POST /auth/login` | `{email, password}` | `AuthResponse` |
 | `POST /auth/refresh` | `{refreshToken}` | `AuthResponse` com **novo** refresh token |
 | `POST /auth/logout` | `{refreshToken}` | encerra a sessão |
@@ -54,6 +55,9 @@ Regras importantes:
   (no SecureStore) e descarte o antigo.
 - Faça um refresh por vez. Se o mesmo refresh token for usado duas vezes, a API entende como
   roubo de token e encerra a sessão inteira (todos os tokens daquele login).
+- Cadastro: `cpf` (com ou sem pontuação) e `phone` (celular com DDD, ex.: `(11) 98765-4321`) são
+  obrigatórios. CPF inválido responde 422; CPF que já tem conta responde 409. A API guarda só o HMAC do CPF
+  e o telefone em dígitos (`user.phone`).
 - Senha: 8 a 72 caracteres, com maiúscula, minúscula e número. E-mail não diferencia maiúsculas.
 
 ### Verificação de e-mail
@@ -169,6 +173,39 @@ gasta e pode ser reenviada.
 
 O limite conta só as mensagens enviadas pelo usuário no mês (fuso de São Paulo). Respostas da IA
 não contam, e uma mensagem que falhou por indisponibilidade da IA (503) é devolvida.
+
+## Plano grátis e Premium
+
+Plano único: **Premium por R$ 9,90/mês**. `user.plan` e `user.planExpiresAt` já vêm com o plano que vale
+agora (o Premium vencido volta para `FREE` sozinho).
+
+| | Grátis | Premium |
+|---|---|---|
+| Lançamentos criados por mês (repetições contam, apagar não devolve) | 15 | sem limite |
+| Metas ativas | 1 | sem limite |
+| Mensagens com a IA por mês | 5 | 1.000 |
+
+Passou do limite: **402** com `"code": "PLAN_LIMIT_REACHED"` em `POST /transactions`, `POST /goals` e
+`POST /chat/messages`. Os números vêm de `GET /billing/plans` (não fixe no app).
+
+| Rota | Resposta |
+|---|---|
+| `GET /billing/plans` | `{enabled, monthlyPrice, trialDays, pixDays, free: {transactionsPerMonth, activeGoals, chatMessagesPerMonth}, premiumChatMessagesPerMonth}`. Com `enabled: false` esconda os botões de pagar |
+| `GET /billing/subscription` | `{plan, premiumUntil, trialAvailable, card: {status, checkoutUrl} \| null, usage: {transactionsThisMonth, activeGoals}}` |
+| `POST /billing/trial` | Libera 7 dias de Premium, uma vez por pessoa (CPF), sem cartão. 409 se já usou |
+| `POST /billing/card` | Cria a assinatura no cartão. Abra `card.checkoutUrl` (Mercado Pago) para a pessoa cadastrar o cartão |
+| `POST /billing/pix` | `{paymentId, amount, premiumDays, qrCode, qrCodeBase64, ticketUrl, expiresAt}`: Pix que soma 30 dias |
+| `POST /billing/card/cancel` | Para a cobrança no cartão; o mês já pago continua valendo |
+
+Como funciona:
+
+- **Cartão**: `card.status` vai de `PENDING` para `ACTIVE` quando o Mercado Pago confirma a 1ª cobrança.
+  Depois de voltar do checkout, consulte `GET /billing/subscription` a cada poucos segundos (por até
+  1 minuto) até `plan` virar `PREMIUM`. O Mercado Pago cobra sozinho todo mês.
+- **Pix**: mostre o QR code (`data:image/png;base64,` + `qrCodeBase64`) e o botão de copiar `qrCode`. O Pix
+  vale 24 h. Consulte `GET /billing/subscription` até `premiumUntil` mudar. Pix pago com Premium ativo soma
+  30 dias ao fim do período atual. Mande `Idempotency-Key` para um toque duplo não gerar dois Pix.
+- Sem pagamentos ligados no servidor, `/billing/trial` funciona e as outras rotas de pagar respondem 503.
 
 ## Foto de perfil
 

@@ -139,10 +139,26 @@ app:
     from: ${MAIL_FROM:Finny <onboarding@resend.dev>}
     api-key: ${RESEND_API_KEY:${BREVO_API_KEY:}}
   chat:
-    free-monthly-limit: ${CHAT_FREE_MONTHLY_LIMIT:100}
+    free-monthly-limit: ${CHAT_FREE_MONTHLY_LIMIT:5}
     premium-monthly-limit: ${CHAT_PREMIUM_MONTHLY_LIMIT:1000}
     timezone: ${APP_TIMEZONE:America/Sao_Paulo}
     history-size: ${CHAT_HISTORY_SIZE:12}
+  plan:
+    # Limites do plano grátis (o do chat é CHAT_FREE_MONTHLY_LIMIT)
+    free-transactions-per-month: ${FREE_TRANSACTIONS_PER_MONTH:15}
+    free-active-goals: ${FREE_ACTIVE_GOALS:1}
+  billing:
+    # mercadopago | none (none = ninguém consegue assinar; o resto da API funciona normal)
+    provider: ${BILLING_PROVIDER:none}
+    monthly-price: ${PREMIUM_MONTHLY_PRICE:9.90}
+    pix-days: ${PREMIUM_PIX_DAYS:30}
+    trial-days: ${PREMIUM_TRIAL_DAYS:7}
+    grace-days: ${PREMIUM_GRACE_DAYS:3}
+    # Página do site para onde o Mercado Pago volta depois do checkout do cartão
+    return-url: ${BILLING_RETURN_URL:}
+    mercado-pago:
+      access-token: ${MERCADOPAGO_ACCESS_TOKEN:}
+      webhook-secret: ${MERCADOPAGO_WEBHOOK_SECRET:}
   rate-limit:
     enabled: ${RATE_LIMIT_ENABLED:true}
     auth-per-minute: ${RATE_LIMIT_AUTH:10}

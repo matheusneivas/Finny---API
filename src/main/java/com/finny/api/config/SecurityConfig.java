@@ -64,6 +64,9 @@ public class SecurityConfig {
                     "/api/v1/auth/refresh", "/api/v1/auth/logout",
                     "/api/v1/auth/password/forgot", "/api/v1/auth/password/reset").permitAll()
 
+                // Avisos do gateway de pagamento (conferidos pela assinatura do próprio gateway)
+                .requestMatchers(HttpMethod.POST, "/api/webhooks/mercadopago").permitAll()
+
                 // Callbacks internos (n8n): exigem X-Internal-API-Key
                 .requestMatchers("/api/internal/**").hasAuthority(InternalApiKeyFilter.ROLE)
 

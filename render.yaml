@@ -57,6 +57,17 @@ services:
       - key: AI_EFFORT
         value: low
 
+      # Pagamentos (Premium R$ 9,90). Guia: docs/PAGAMENTOS.md
+      # Deixe BILLING_PROVIDER=none até ter o token do Mercado Pago.
+      - key: BILLING_PROVIDER
+        value: none
+      - key: MERCADOPAGO_ACCESS_TOKEN
+        sync: false
+      - key: MERCADOPAGO_WEBHOOK_SECRET
+        sync: false
+      - key: BILLING_RETURN_URL
+        sync: false
+
       # Render fica atrás de um proxy: usar o IP real do cliente no rate limit
       - key: FORWARD_HEADERS_STRATEGY
         value: framework

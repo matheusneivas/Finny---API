@@ -4,7 +4,11 @@ import com.finny.api.application.dto.request.LoginRequest;
 import com.finny.api.application.dto.request.RefreshTokenRequest;
 import com.finny.api.application.dto.request.RegisterRequest;
 import com.finny.api.application.dto.response.AuthResponse;
+import com.finny.api.application.exception.BusinessException;
 import com.finny.api.application.exception.ResourceConflictException;
+import com.finny.api.application.exception.ServiceUnavailableException;
+import com.finny.api.application.util.CpfUtils;
+import com.finny.api.application.util.PhoneUtils;
 import com.finny.api.application.exception.TooManyRequestsException;
 import com.finny.api.application.exception.UnauthorizedException;
 import com.finny.api.application.exception.ValidationException;
@@ -41,6 +45,10 @@ public class AuthService {
     private final UserMapper userMapper;
     private final EmailCodeService emailCodeService;
     private final EmailVerificationPolicy verificationPolicy;
+    private final PlanService planService;
+
+    @org.springframework.beans.factory.annotation.Value("${app.cpf-secret:}")
+    private String cpfSecret;
 
     /** "Esqueci a senha": 1 pedido por minuto por e-mail, exista a conta ou não (não revela cadastro). */
     private final Cache<String, Long> forgotCooldown = Caffeine.newBuilder()
@@ -55,11 +63,28 @@ public class AuthService {
         if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new ResourceConflictException("E-mail já cadastrado");
         }
+        if (!CpfUtils.isValid(request.getCpf())) {
+            throw new BusinessException("CPF inválido");
+        }
+        String phone = PhoneUtils.normalize(request.getPhone());
+        if (phone == null) {
+            throw new BusinessException("Telefone inválido. Use o DDD, ex.: (11) 98765-4321");
+        }
+        if (cpfSecret == null || cpfSecret.length() < 16 || cpfSecret.startsWith("finny-cpf-secret-change")) {
+            log.error("CPF_SECRET ausente ou inseguro: cadastro bloqueado");
+            throw new ServiceUnavailableException("Cadastro indisponível no momento. Tente de novo mais tarde.");
+        }
+        String cpfHash = CpfUtils.hash(request.getCpf(), cpfSecret);
+        if (userRepository.existsByCpfHash(cpfHash)) {
+            throw new ResourceConflictException("CPF já possui uma conta cadastrada");
+        }
 
         User user = new User();
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setFullName(request.getFullName().trim());
+        user.setCpfHash(cpfHash);
+        user.setPhone(phone);
         user.setPlan(UserPlan.FREE);
         user.setEmailVerified(false);
         user = userRepository.save(user);
@@ -182,6 +207,9 @@ public class AuthService {
 
     private UserResponse toUserResponse(User user) {
         UserResponse response = userMapper.toResponse(user);
+        UserPlan plan = planService.effectivePlan(user);
+        response.setPlan(plan);
+        if (plan == UserPlan.FREE) response.setPlanExpiresAt(null);
         // Com a verificação desligada (sem provedor de e-mail), ninguém fica preso na tela de código.
         if (!verificationPolicy.enabled()) response.setEmailVerified(true);
         return response;

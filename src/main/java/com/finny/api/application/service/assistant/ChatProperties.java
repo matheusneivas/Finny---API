@@ -12,7 +12,7 @@ import java.time.ZoneId;
 public class ChatProperties {
 
     /** Mensagens do usuário por mês no plano FREE. */
-    private long freeMonthlyLimit = 100;
+    private long freeMonthlyLimit = 5;
 
     /** Mensagens do usuário por mês no plano PREMIUM. */
     private long premiumMonthlyLimit = 1000;
