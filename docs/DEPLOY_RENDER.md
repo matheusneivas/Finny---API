@@ -89,8 +89,7 @@ Mande só essa URL na conversa (ela não é segredo).
 - **n8n (OCR)**: quando for ligar o OCR, copie o `INTERNAL_API_KEY` em
   **fini-api > Environment** (botão de olho para revelar) e cole no n8n, no header
   `X-Internal-API-Key`.
-- **Versão web**: quando existir, coloque o domínio em `CORS_ALLOWED_ORIGINS`
-  (ex.: `https://app.finny.com.br`). O app mobile não precisa disso.
+- **Versão web (site)**: em Environment, coloque o endereço do site em `CORS_ALLOWED_ORIGINS` (ex.: `https://finny-ia.vercel.app`, sem barra no final) e salve com redeploy. Passo a passo no `docs/SITE.md` do repositório do app.
 - **Novos deploys**: todo merge na `master` faz deploy automático.
 
 ## E-mails (código de verificação e "esqueci a senha")

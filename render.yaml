@@ -62,8 +62,10 @@ services:
         value: framework
       - key: API_DOCS_ENABLED
         value: "false"
+      # Endereço do site (versão web), ex.: https://finny-ia.vercel.app (sem barra no final; vários separados
+      # por vírgula). Preenchido à mão em Environment para o Blueprint não apagar o valor a cada sincronização.
       - key: CORS_ALLOWED_ORIGINS
-        value: ""
+        sync: false
 
       # JVM ajustada para 512 MB (plano free)
       - key: JAVA_OPTS
