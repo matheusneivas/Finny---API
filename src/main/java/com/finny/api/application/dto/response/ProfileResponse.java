@@ -17,6 +17,8 @@ import java.util.Set;
 @AllArgsConstructor
 public class ProfileResponse {
     private String fullName;
+    /** Caminho relativo da foto (ex.: /api/v1/users/me/avatar?v=abc), ou null. */
+    private String avatarUrl;
     private LocalDate birthDate;
     private String occupation;
     private IncomeRange incomeRange;

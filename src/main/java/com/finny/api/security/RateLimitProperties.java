@@ -24,6 +24,9 @@ public class RateLimitProperties {
     /** Envio de imagens (OCR), por usuário. */
     private int uploadPerMinute = 10;
 
+    /** Troca de foto de perfil, por usuário, por HORA. */
+    private int avatarPerHour = 10;
+
     /** Demais rotas da API, por usuário (ou IP, se anônimo). */
     private int defaultPerMinute = 300;
 }

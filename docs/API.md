@@ -129,6 +129,24 @@ cria as repetições (parcelas) automaticamente.
 O limite conta só as mensagens enviadas pelo usuário no mês (fuso de São Paulo). Respostas da IA
 não contam, e uma mensagem que falhou por indisponibilidade da IA (503) é devolvida.
 
+## Foto de perfil
+
+| Rota | Corpo | Resposta |
+|---|---|---|
+| `PUT /users/me/avatar` | `multipart/form-data`, campo `file` | `{ "avatarUrl": "/api/v1/users/me/avatar?v=…" }` |
+| `GET /users/me/avatar` | | bytes da imagem (`image/jpeg`); 404 se não houver foto |
+| `DELETE /users/me/avatar` | | 204 |
+
+- Aceita JPEG, PNG e WEBP de até 2 MB (413 acima disso). O tipo é conferido pelo conteúdo do arquivo,
+  não pelo `Content-Type`. O servidor re-encoda para JPEG de até 512x512 e descarta EXIF/GPS.
+- `avatarUrl` também vem em `user` (login, cadastro, refresh) e no perfil (`GET /users/profile`).
+  É um caminho relativo: junte com a URL base. O `?v=` muda a cada troca de foto, então pode usar
+  como chave de cache.
+- O `GET` exige `Authorization: Bearer`, como as outras rotas. Mande o header junto ao carregar a
+  imagem (ex.: `source={{ uri, headers: { Authorization } }}`).
+- No cadastro: chame `POST /auth/register` e, com o token recebido, `PUT /users/me/avatar`.
+- Limite: 10 envios por hora por usuário.
+
 ## Push
 
 - `POST /notifications/token` com `{ "token": "<expo/fcm token>", "platform": "IOS" | "ANDROID" | "WEB" }`
@@ -146,4 +164,5 @@ não contam, e uma mensagem que falhou por indisponibilidade da IA (503) é devo
 | `POST /auth/refresh` | 30 por minuto por IP |
 | `POST /chat/messages` | 15 por minuto por usuário |
 | `POST /ocr/*` | 10 por minuto por usuário |
+| `PUT /users/me/avatar` | 10 por hora por usuário |
 | Demais | 300 por minuto por usuário |
