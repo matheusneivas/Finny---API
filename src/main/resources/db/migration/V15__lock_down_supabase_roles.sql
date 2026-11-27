@@ -7,7 +7,10 @@ DECLARE
     t record;
     r text;
 BEGIN
-    FOR t IN SELECT tablename FROM pg_tables WHERE schemaname = current_schema() LOOP
+    -- A tabela de histórico do Flyway fica de fora: o próprio Flyway a mantém travada durante a migração
+    -- (e o REVOKE abaixo já tira o acesso dos papéis públicos a ela)
+    FOR t IN SELECT tablename FROM pg_tables
+             WHERE schemaname = current_schema() AND tablename <> 'flyway_schema_history' LOOP
         EXECUTE format('ALTER TABLE %I.%I ENABLE ROW LEVEL SECURITY', current_schema(), t.tablename);
     END LOOP;
 
