@@ -5,7 +5,6 @@ import com.finny.api.application.dto.response.ApiResponse;
 import com.finny.api.application.dto.response.ChatHistoryResponse;
 import com.finny.api.application.dto.response.ChatResponse;
 import com.finny.api.application.dto.response.ChatStatsResponse;
-import com.finny.api.domain.repository.ChatMessageRepository;
 import com.finny.api.application.service.ChatService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -25,60 +24,50 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/chat")
 @RequiredArgsConstructor
-@Tag(name = "Chat", description = "Endpoints de chat com IA")
+@Tag(name = "Chat", description = "Chat com o assistente de IA")
 @SecurityRequirement(name = "bearerAuth")
 public class ChatController {
 
     private final ChatService chatService;
-    private final ChatMessageRepository chatMessageRepository;
 
     @PostMapping("/messages")
-    @Operation(summary = "Enviar mensagem para o assistente")
+    @Operation(summary = "Enviar mensagem para o assistente",
+        description = "A IA nunca grava dados sozinha. Quando o usuário pede para registrar algo, a resposta "
+            + "traz proposedActions; o app mostra um cartão e, se o usuário confirmar, chama o endpoint REST "
+            + "correspondente (POST /transactions, PUT/DELETE /transactions/{id}, POST /goals, "
+            + "POST /goals/{id}/contribute). Retorna 422 quando o limite mensal acaba e 503 se a IA estiver fora.")
     public ResponseEntity<ChatResponse> sendMessage(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody ChatMessageRequest request) {
-
-        UUID userId = UUID.fromString(userDetails.getUsername());
-        ChatResponse response = chatService.sendMessage(userId, request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(chatService.sendMessage(userId(userDetails), request));
     }
 
     @GetMapping("/history")
-    @Operation(summary = "Obter histórico de mensagens")
+    @Operation(summary = "Histórico de mensagens (mais recentes primeiro)")
     public ResponseEntity<Page<ChatHistoryResponse>> getHistory(
             @AuthenticationPrincipal UserDetails userDetails,
             @PageableDefault(size = 50) Pageable pageable) {
-
-        UUID userId = UUID.fromString(userDetails.getUsername());
-        Page<ChatHistoryResponse> response = chatService.getHistory(userId, pageable);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(chatService.getHistory(userId(userDetails), pageable));
     }
 
     @DeleteMapping("/history")
-    @Operation(summary = "Deletar histórico de mensagens")
+    @Operation(summary = "Apagar histórico de mensagens",
+        description = "Não devolve mensagens ao limite mensal: o contador considera as mensagens enviadas.")
     public ResponseEntity<ApiResponse<Void>> deleteHistory(@AuthenticationPrincipal UserDetails userDetails) {
-        UUID userId = UUID.fromString(userDetails.getUsername());
-        chatService.deleteHistory(userId);
-
+        chatService.deleteHistory(userId(userDetails));
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .success(true)
-                .message("Histórico deletado com sucesso")
+                .message("Histórico apagado com sucesso")
                 .build());
     }
 
     @GetMapping("/stats")
-    @Operation(summary = "Estatísticas de uso do chat")
+    @Operation(summary = "Uso do chat no mês (mensagens usadas, limite do plano e data de renovação)")
     public ResponseEntity<ChatStatsResponse> getStats(@AuthenticationPrincipal UserDetails userDetails) {
-        UUID userId = UUID.fromString(userDetails.getUsername());
+        return ResponseEntity.ok(chatService.getStats(userId(userDetails)));
+    }
 
-        long totalMessages = chatMessageRepository.countByUserId(userId);
-        long totalTokens = chatMessageRepository.sumTokensUsedByUserId(userId);
-        double estimatedCost = (totalTokens / 1000.0) * 0.002;
-
-        return ResponseEntity.ok(ChatStatsResponse.builder()
-                .totalMessages(totalMessages)
-                .totalTokensUsed(totalTokens)
-                .estimatedCostUsd(estimatedCost)
-                .build());
+    private static UUID userId(UserDetails userDetails) {
+        return UUID.fromString(userDetails.getUsername());
     }
 }

@@ -4,7 +4,6 @@ import com.finny.api.application.dto.request.LoginRequest;
 import com.finny.api.application.dto.request.RefreshTokenRequest;
 import com.finny.api.application.dto.request.RegisterRequest;
 import com.finny.api.application.dto.response.AuthResponse;
-import com.finny.api.application.dto.response.UserResponse;
 import com.finny.api.application.exception.ResourceConflictException;
 import com.finny.api.application.exception.UnauthorizedException;
 import com.finny.api.application.mapper.UserMapper;
@@ -16,11 +15,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -30,117 +29,76 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
+    private final RefreshTokenService refreshTokenService;
     private final AuthenticationManager authenticationManager;
     private final UserMapper userMapper;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        log.debug("Registering new user with email: {}", request.getEmail());
+        String email = normalizeEmail(request.getEmail());
 
-        // Verificar se e-mail já existe
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new ResourceConflictException("E-mail já cadastrado");
         }
 
-        // Criar novo usuário
         User user = new User();
-        user.setEmail(request.getEmail());
+        user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        user.setFullName(request.getFullName());
+        user.setFullName(request.getFullName().trim());
         user.setPlan(UserPlan.FREE);
-        user.setEmailVerified(false); // TODO: Implementar verificação de e-mail
-
+        user.setEmailVerified(false); // TODO: verificação de e-mail
         user = userRepository.save(user);
 
-        // Gerar tokens
-        String accessToken = tokenProvider.generateToken(user.getId());
-        String refreshToken = tokenProvider.generateRefreshToken(user.getId());
-
-        UserResponse userResponse = userMapper.toResponse(user);
-
-        log.info("User registered successfully: {}", user.getEmail());
-
-        return AuthResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .tokenType("Bearer")
-                .user(userResponse)
-                .build();
+        log.info("Usuário registrado | id: {}", user.getId());
+        return issueTokens(user);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse login(LoginRequest request) {
-        log.debug("User login attempt: {}", request.getEmail());
+        String email = normalizeEmail(request.getEmail());
 
-        // Autenticar usuário
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
-                )
-        );
+        // Lança BadCredentialsException (401 genérico) para e-mail inexistente ou senha errada
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, request.getPassword()));
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        User user = userRepository.findByEmailIgnoreCase(email)
+            .orElseThrow(() -> new UnauthorizedException("E-mail ou senha incorretos"));
 
-        // Buscar usuário
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new UnauthorizedException("E-mail ou senha incorretos"));
-
-        // Gerar tokens
-        String accessToken = tokenProvider.generateToken(user.getId());
-        String refreshToken = tokenProvider.generateRefreshToken(user.getId());
-
-        UserResponse userResponse = userMapper.toResponse(user);
-
-        log.info("User logged in successfully: {}", user.getEmail());
-
-        return AuthResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .tokenType("Bearer")
-                .user(userResponse)
-                .build();
+        log.info("Login realizado | id: {}", user.getId());
+        return issueTokens(user);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(noRollbackFor = UnauthorizedException.class)
     public AuthResponse refreshToken(RefreshTokenRequest request) {
-        log.debug("Token refresh attempt");
+        RefreshTokenService.Rotation rotation = refreshTokenService.rotate(request.getRefreshToken());
 
-        String refreshToken = request.getRefreshToken();
-
-        // Validar refresh token
-        if (!tokenProvider.validateToken(refreshToken)) {
-            throw new UnauthorizedException("Refresh token inválido ou expirado");
-        }
-
-        // Verificar se é refresh token
-        if (!tokenProvider.isRefreshToken(refreshToken)) {
-            throw new UnauthorizedException("Token fornecido não é um refresh token");
-        }
-
-        // Extrair userId e gerar novos tokens
-        var userId = tokenProvider.getUserIdFromToken(refreshToken);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UnauthorizedException("Usuário não encontrado"));
-
-        String newAccessToken = tokenProvider.generateToken(userId);
-        String newRefreshToken = tokenProvider.generateRefreshToken(userId);
-
-        UserResponse userResponse = userMapper.toResponse(user);
-
-        log.info("Token refreshed successfully for user: {}", user.getEmail());
+        User user = userRepository.findById(rotation.userId())
+            .orElseThrow(() -> new UnauthorizedException("Sessão inválida"));
 
         return AuthResponse.builder()
-                .accessToken(newAccessToken)
-                .refreshToken(newRefreshToken)
-                .tokenType("Bearer")
-                .user(userResponse)
-                .build();
+            .accessToken(tokenProvider.generateAccessToken(user.getId()).token())
+            .refreshToken(rotation.refreshToken().token())
+            .expiresIn(tokenProvider.getAccessExpirationSeconds())
+            .user(userMapper.toResponse(user))
+            .build();
     }
 
-    public void logout() {
-        // Stateless JWT - apenas limpar contexto
-        SecurityContextHolder.clearContext();
-        log.debug("User logged out");
+    @Transactional
+    public void logout(String refreshToken) {
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            refreshTokenService.revokeSession(refreshToken);
+        }
+    }
+
+    private AuthResponse issueTokens(User user) {
+        return AuthResponse.builder()
+            .accessToken(tokenProvider.generateAccessToken(user.getId()).token())
+            .refreshToken(refreshTokenService.issueForNewSession(user.getId()).token())
+            .expiresIn(tokenProvider.getAccessExpirationSeconds())
+            .user(userMapper.toResponse(user))
+            .build();
+    }
+
+    private static String normalizeEmail(String email) {
+        return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
     }
 }

@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -19,4 +20,7 @@ public class ChatHistoryResponse {
     private String content;
     private Integer tokensUsed;
     private LocalDateTime createdAt;
+    /** Propostas feitas nesta resposta da IA (só em mensagens ASSISTANT). */
+    @Builder.Default
+    private List<ProposedActionResponse> proposedActions = List.of();
 }

@@ -22,7 +22,7 @@ public class OnboardingStep1Request {
 
     private String occupation;
 
-    @NotBlank(message = "CPF é obrigatório")
+    /** Opcional (minimização de dados, LGPD). Se enviado, é validado e guardado só como hash. */
     @Size(min = 11, max = 14, message = "CPF deve ter 11 dígitos")
     private String cpf;
 

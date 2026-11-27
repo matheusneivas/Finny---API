@@ -1,0 +1,2778 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Fini API",
+    "description": "API do Fini, assistente financeiro com IA.\n\nAutenticação: envie `Authorization: Bearer <accessToken>`. O access token dura 30 minutos; renove com POST /api/v1/auth/refresh (o refresh token é de uso único e é trocado a cada renovação).\n\nErros seguem sempre o formato `{timestamp, status, error, message, errors}`. Respostas 429 trazem o header `Retry-After` (segundos).\n\nChat: a IA nunca grava dados sozinha. Ela devolve `proposedActions`, que o app mostra como cartões de confirmação; ao confirmar, o app chama o endpoint REST correspondente.",
+    "version": "2.0.0"
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Transactions",
+      "description": "Endpoints de transações"
+    },
+    {
+      "name": "Profile",
+      "description": "Endpoints de perfil do usuário"
+    },
+    {
+      "name": "Onboarding",
+      "description": "Configuração inicial do perfil financeiro"
+    },
+    {
+      "name": "Authentication",
+      "description": "Endpoints de autenticação"
+    },
+    {
+      "name": "OCR",
+      "description": "Endpoints de processamento OCR de notas fiscais"
+    },
+    {
+      "name": "Categories",
+      "description": "Endpoints de categorias"
+    },
+    {
+      "name": "Notifications",
+      "description": "Tokens de push notification do dispositivo"
+    },
+    {
+      "name": "Goals",
+      "description": "Endpoints de metas financeiras"
+    },
+    {
+      "name": "Chat",
+      "description": "Chat com o assistente de IA"
+    }
+  ],
+  "paths": {
+    "/api/v1/users/profile": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Obter perfil do usuário",
+        "operationId": "getProfile",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Atualizar perfil do usuário",
+        "operationId": "updateProfile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/transactions/{id}": {
+      "get": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Obter transação por ID",
+        "operationId": "getTransactionById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Atualizar transação",
+        "operationId": "updateTransaction",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Deletar transação (soft delete)",
+        "operationId": "deleteTransaction",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/goals/{id}": {
+      "get": {
+        "tags": [
+          "Goals"
+        ],
+        "summary": "Obter meta por ID",
+        "operationId": "getGoalById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Goals"
+        ],
+        "summary": "Atualizar meta",
+        "operationId": "updateGoal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Goals"
+        ],
+        "summary": "Deletar meta",
+        "operationId": "deleteGoal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/categories/{id}": {
+      "put": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Atualizar categoria personalizada",
+        "operationId": "updateCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Deletar categoria personalizada",
+        "operationId": "deleteCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/transactions": {
+      "get": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Listar transações do usuário",
+        "description": "Aceita filtros opcionais startDate e endDate (yyyy-MM-dd). Sem filtros, retorna transações até hoje (esconde recorrências futuras).",
+        "operationId": "getTransactions",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageTransactionResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Criar nova transação",
+        "operationId": "createTransaction",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/onboarding/step/5": {
+      "post": {
+        "tags": [
+          "Onboarding"
+        ],
+        "summary": "Passo 5 — Objetivos e preferências",
+        "description": "Metas financeiras, preferências de controle e estilo de comunicação",
+        "operationId": "step5",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingStep5Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingStepResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/onboarding/step/4": {
+      "post": {
+        "tags": [
+          "Onboarding"
+        ],
+        "summary": "Passo 4 — Investimentos",
+        "description": "Já investe? Em quê? Quanto quer investir por mês?",
+        "operationId": "step4",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingStep4Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingStepResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/onboarding/step/3": {
+      "post": {
+        "tags": [
+          "Onboarding"
+        ],
+        "summary": "Passo 3 — Dívidas e reserva de emergência",
+        "description": "Possui dívidas? Qual o total? Tem reserva de emergência?",
+        "operationId": "step3",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingStep3Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingStepResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/onboarding/step/2": {
+      "post": {
+        "tags": [
+          "Onboarding"
+        ],
+        "summary": "Passo 2 — Renda e moradia",
+        "description": "Faixa de renda mensal e se paga aluguel (e quanto)",
+        "operationId": "step2",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingStep2Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingStepResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/onboarding/step/1": {
+      "post": {
+        "tags": [
+          "Onboarding"
+        ],
+        "summary": "Passo 1 — Informações básicas",
+        "description": "Data de nascimento e ocupação",
+        "operationId": "step1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingStep1Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingStepResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ocr/process": {
+      "post": {
+        "tags": [
+          "OCR"
+        ],
+        "summary": "Enviar imagem de nota fiscal para processamento OCR",
+        "operationId": "processReceipt",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "image"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OcrStatusResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/token": {
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Registrar token de push do dispositivo",
+        "description": "Se o token já estava ligado a outra conta (troca de conta no mesmo aparelho), ele passa para a conta atual.",
+        "operationId": "registerToken",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Remover token de push do dispositivo (somente da própria conta)",
+        "operationId": "removeToken",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/goals": {
+      "get": {
+        "tags": [
+          "Goals"
+        ],
+        "summary": "Listar metas do usuário",
+        "operationId": "getGoals",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GoalResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Goals"
+        ],
+        "summary": "Criar nova meta",
+        "operationId": "createGoal",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/goals/{id}/contribute": {
+      "post": {
+        "tags": [
+          "Goals"
+        ],
+        "summary": "Adicionar contribuição à meta",
+        "operationId": "contributeToGoal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoalContributionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalProgressResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/chat/messages": {
+      "post": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Enviar mensagem para o assistente",
+        "description": "A IA nunca grava dados sozinha. Quando o usuário pede para registrar algo, a resposta traz proposedActions; o app mostra um cartão e, se o usuário confirmar, chama o endpoint REST correspondente (POST /transactions, PUT/DELETE /transactions/{id}, POST /goals, POST /goals/{id}/contribute). Retorna 422 quando o limite mensal acaba e 503 se a IA estiver fora.",
+        "operationId": "sendMessage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatMessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/categories": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Listar categorias (padrão + personalizadas)",
+        "description": "Filtro opcional: ?type=INCOME ou ?type=EXPENSE",
+        "operationId": "getCategories",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "INCOME",
+                "EXPENSE"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Criar nova categoria personalizada",
+        "operationId": "createCategory",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Registrar novo usuário",
+        "operationId": "register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Renovar access token usando refresh token",
+        "description": "Rotação: devolve um NOVO refresh token e invalida o anterior. Reusar um refresh token já trocado encerra a sessão (possível roubo de token).",
+        "operationId": "refreshToken",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Fazer logout",
+        "description": "Revoga a sessão do refresh token informado. O access token atual expira sozinho em poucos minutos; o app deve descartá-lo.",
+        "operationId": "logout",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogoutRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Fazer login",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/transactions/summary": {
+      "get": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Obter resumo de transações",
+        "operationId": "getSummary",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionSummaryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/transactions/by-category": {
+      "get": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Resumo de gastos agrupados por categoria",
+        "operationId": "getCategorySummary",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategorySummaryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/onboarding/status": {
+      "get": {
+        "tags": [
+          "Onboarding"
+        ],
+        "summary": "Verificar progresso do onboarding",
+        "description": "Retorna o passo atual, percentual de progresso e próxima etapa",
+        "operationId": "getStatus",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingStepResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ocr/status/{processingId}": {
+      "get": {
+        "tags": [
+          "OCR"
+        ],
+        "summary": "Verificar status do processamento OCR",
+        "operationId": "getStatus_1",
+        "parameters": [
+          {
+            "name": "processingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OcrStatusResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/chat/stats": {
+      "get": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Uso do chat no mês (mensagens usadas, limite do plano e data de renovação)",
+        "operationId": "getStats",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatStatsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/chat/history": {
+      "get": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Histórico de mensagens (mais recentes primeiro)",
+        "operationId": "getHistory",
+        "parameters": [
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageChatHistoryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Apagar histórico de mensagens",
+        "description": "Não devolve mensagens ao limite mensal: o contador considera as mensagens enviadas.",
+        "operationId": "deleteHistory",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/transactions/{id}/recurrence": {
+      "delete": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Deletar recorrências",
+        "description": "mode=ALL apaga todos os meses do grupo. mode=THIS_AND_FUTURE apaga este mês e os seguintes.",
+        "operationId": "deleteRecurrence",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "ALL"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "UpdateProfileRequest": {
+        "type": "object",
+        "properties": {
+          "birthDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "occupation": {
+            "type": "string"
+          },
+          "incomeRange": {
+            "type": "string",
+            "enum": [
+              "UNDER_2K",
+              "RANGE_2K_5K",
+              "RANGE_5K_10K",
+              "RANGE_10K_20K",
+              "OVER_20K"
+            ]
+          },
+          "hasDebts": {
+            "type": "boolean"
+          },
+          "totalDebt": {
+            "type": "number"
+          },
+          "debtTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "hasEmergencyFund": {
+            "type": "boolean"
+          },
+          "emergencyFundMonths": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasInvestments": {
+            "type": "boolean"
+          },
+          "investmentTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "shortTermGoals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "longTermGoals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "primaryGoal": {
+            "type": "string"
+          },
+          "primaryGoalTimeframe": {
+            "type": "string"
+          },
+          "expenseControlPreference": {
+            "type": "string",
+            "enum": [
+              "MANUAL",
+              "AUTOMATIC",
+              "MIXED"
+            ]
+          },
+          "mainExpenseCategories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "knowledgeLevel": {
+            "type": "string",
+            "enum": [
+              "BEGINNER",
+              "INTERMEDIATE",
+              "ADVANCED"
+            ]
+          },
+          "reportFrequency": {
+            "type": "string",
+            "enum": [
+              "DAILY",
+              "WEEKLY",
+              "MONTHLY",
+              "ON_DEMAND"
+            ]
+          },
+          "communicationStyle": {
+            "type": "string",
+            "enum": [
+              "FORMAL",
+              "FRIENDLY",
+              "DIRECT"
+            ]
+          },
+          "notificationPreferences": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "ProfileResponse": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string"
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "occupation": {
+            "type": "string"
+          },
+          "incomeRange": {
+            "type": "string",
+            "enum": [
+              "UNDER_2K",
+              "RANGE_2K_5K",
+              "RANGE_5K_10K",
+              "RANGE_10K_20K",
+              "OVER_20K"
+            ]
+          },
+          "paysRent": {
+            "type": "boolean"
+          },
+          "monthlyRent": {
+            "type": "number"
+          },
+          "hasDebts": {
+            "type": "boolean"
+          },
+          "totalDebt": {
+            "type": "number"
+          },
+          "debtTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "hasEmergencyFund": {
+            "type": "boolean"
+          },
+          "emergencyFundMonths": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasInvestments": {
+            "type": "boolean"
+          },
+          "investmentTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "monthlyInvestmentGoal": {
+            "type": "number"
+          },
+          "shortTermGoals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "longTermGoals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "primaryGoal": {
+            "type": "string"
+          },
+          "primaryGoalTimeframe": {
+            "type": "string"
+          },
+          "expenseControlPreference": {
+            "type": "string",
+            "enum": [
+              "MANUAL",
+              "AUTOMATIC",
+              "MIXED"
+            ]
+          },
+          "mainExpenseCategories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "knowledgeLevel": {
+            "type": "string",
+            "enum": [
+              "BEGINNER",
+              "INTERMEDIATE",
+              "ADVANCED"
+            ]
+          },
+          "reportFrequency": {
+            "type": "string",
+            "enum": [
+              "DAILY",
+              "WEEKLY",
+              "MONTHLY",
+              "ON_DEMAND"
+            ]
+          },
+          "communicationStyle": {
+            "type": "string",
+            "enum": [
+              "FORMAL",
+              "FRIENDLY",
+              "DIRECT"
+            ]
+          },
+          "notificationPreferences": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "currentStep": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "onboardingCompleted": {
+            "type": "boolean"
+          },
+          "onboardingCompletedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TransactionRequest": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "INCOME",
+              "EXPENSE"
+            ]
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "transactionDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "ONCE",
+              "DAILY",
+              "WEEKLY",
+              "MONTHLY",
+              "QUARTERLY",
+              "YEARLY"
+            ]
+          },
+          "repeatCount": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "dueDayOfMonth": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 31,
+            "minimum": 1
+          }
+        },
+        "required": [
+          "amount",
+          "categoryId",
+          "transactionDate",
+          "type"
+        ]
+      },
+      "CategoryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "transactionType": {
+            "type": "string",
+            "enum": [
+              "INCOME",
+              "EXPENSE"
+            ]
+          }
+        }
+      },
+      "TransactionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "INCOME",
+              "EXPENSE"
+            ]
+          },
+          "category": {
+            "$ref": "#/components/schemas/CategoryResponse"
+          },
+          "description": {
+            "type": "string"
+          },
+          "transactionDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "MANUAL",
+              "OCR",
+              "RECURRENT",
+              "IMPORT"
+            ]
+          },
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "ONCE",
+              "DAILY",
+              "WEEKLY",
+              "MONTHLY",
+              "QUARTERLY",
+              "YEARLY"
+            ]
+          },
+          "repeatCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "dueDayOfMonth": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "recurrenceGroupId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ocrImageUrl": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "GoalRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "targetAmount": {
+            "type": "number"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date"
+          },
+          "relatedCategoryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "icon": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "deadline",
+          "name",
+          "targetAmount"
+        ]
+      },
+      "GoalResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "targetAmount": {
+            "type": "number"
+          },
+          "savedAmount": {
+            "type": "number"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date"
+          },
+          "relatedCategory": {
+            "$ref": "#/components/schemas/CategoryResponse"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "COMPLETED",
+              "ARCHIVED"
+            ]
+          },
+          "progressPercentage": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CategoryRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "icon": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "color": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "OnboardingStep5Request": {
+        "type": "object",
+        "properties": {
+          "shortTermGoals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "longTermGoals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "primaryGoal": {
+            "type": "string"
+          },
+          "primaryGoalTimeframe": {
+            "type": "string"
+          },
+          "expenseControlPreference": {
+            "type": "string",
+            "enum": [
+              "MANUAL",
+              "AUTOMATIC",
+              "MIXED"
+            ]
+          },
+          "mainExpenseCategories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "knowledgeLevel": {
+            "type": "string",
+            "enum": [
+              "BEGINNER",
+              "INTERMEDIATE",
+              "ADVANCED"
+            ]
+          },
+          "reportFrequency": {
+            "type": "string",
+            "enum": [
+              "DAILY",
+              "WEEKLY",
+              "MONTHLY",
+              "ON_DEMAND"
+            ]
+          },
+          "communicationStyle": {
+            "type": "string",
+            "enum": [
+              "FORMAL",
+              "FRIENDLY",
+              "DIRECT"
+            ]
+          },
+          "notificationPreferences": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "communicationStyle",
+          "expenseControlPreference",
+          "knowledgeLevel",
+          "reportFrequency"
+        ]
+      },
+      "OnboardingStepResponse": {
+        "type": "object",
+        "properties": {
+          "currentStep": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalSteps": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "progressPercentage": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completed": {
+            "type": "boolean"
+          },
+          "nextStepDescription": {
+            "type": "string"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/ProfileResponse"
+          }
+        }
+      },
+      "OnboardingStep4Request": {
+        "type": "object",
+        "properties": {
+          "hasInvestments": {
+            "type": "boolean"
+          },
+          "investmentTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "monthlyInvestmentGoal": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "hasInvestments",
+          "monthlyInvestmentGoal"
+        ]
+      },
+      "OnboardingStep3Request": {
+        "type": "object",
+        "properties": {
+          "hasDebts": {
+            "type": "boolean"
+          },
+          "totalDebt": {
+            "type": "number"
+          },
+          "debtTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "hasEmergencyFund": {
+            "type": "boolean"
+          },
+          "emergencyFundMonths": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "hasDebts",
+          "hasEmergencyFund"
+        ]
+      },
+      "OnboardingStep2Request": {
+        "type": "object",
+        "properties": {
+          "incomeRange": {
+            "type": "string",
+            "enum": [
+              "UNDER_2K",
+              "RANGE_2K_5K",
+              "RANGE_5K_10K",
+              "RANGE_10K_20K",
+              "OVER_20K"
+            ]
+          },
+          "paysRent": {
+            "type": "boolean"
+          },
+          "monthlyRent": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "incomeRange",
+          "paysRent"
+        ]
+      },
+      "OnboardingStep1Request": {
+        "type": "object",
+        "properties": {
+          "birthDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "occupation": {
+            "type": "string"
+          },
+          "cpf": {
+            "type": "string",
+            "maxLength": 14,
+            "minLength": 11
+          },
+          "adult": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "birthDate"
+        ]
+      },
+      "OcrStatusResponse": {
+        "type": "object",
+        "properties": {
+          "processingId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "PROCESSING",
+              "COMPLETED",
+              "FAILED"
+            ]
+          },
+          "errorMessage": {
+            "type": "string"
+          },
+          "createdTransaction": {
+            "$ref": "#/components/schemas/TransactionResponse"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "processedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DeviceTokenRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 4096,
+            "minLength": 0
+          },
+          "platform": {
+            "type": "string",
+            "pattern": "IOS|ANDROID|WEB"
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "ApiResponseVoid": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {}
+        }
+      },
+      "GoalContributionRequest": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "amount"
+        ]
+      },
+      "GoalProgressResponse": {
+        "type": "object",
+        "properties": {
+          "savedAmount": {
+            "type": "number"
+          },
+          "progressPercentage": {
+            "type": "number"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ChatMessageRequest": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "ChatResponse": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reply": {
+            "type": "string"
+          },
+          "tokensUsed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "proposedActions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposedActionResponse"
+            }
+          },
+          "messagesUsedThisMonth": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "monthlyLimit": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ProposedActionResponse": {
+        "type": "object",
+        "description": "Ação sugerida pela IA. Só é aplicada quando o usuário confirma no app.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identificador da proposta (para o app controlar o cartão)"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "CREATE_TRANSACTION",
+              "UPDATE_TRANSACTION",
+              "DELETE_TRANSACTION",
+              "CREATE_GOAL",
+              "CONTRIBUTE_GOAL"
+            ]
+          },
+          "summary": {
+            "type": "string",
+            "description": "Resumo em português, montado pelo servidor, para exibir no cartão",
+            "example": "Adicionar despesa de R$ 50,00 em Alimentação (Mercado) em 26/11/2026"
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "Corpo pronto para o endpoint REST correspondente (já validado pelo servidor)"
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 255,
+            "minLength": 0
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 72,
+            "minLength": 8,
+            "pattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$"
+          },
+          "fullName": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "email",
+          "fullName",
+          "password"
+        ]
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "tokenType": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserResponse"
+          }
+        }
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "onboardingCompleted": {
+            "type": "boolean"
+          },
+          "plan": {
+            "type": "string",
+            "enum": [
+              "FREE",
+              "PREMIUM"
+            ]
+          },
+          "planExpiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RefreshTokenRequest": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "LogoutRequest": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 0
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "minLength": 1
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "Pageable": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "sort": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PageTransactionResponse": {
+        "type": "object",
+        "properties": {
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PageableObject": {
+        "type": "object",
+        "properties": {
+          "offset": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "paged": {
+            "type": "boolean"
+          },
+          "pageNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unpaged": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SortObject": {
+        "type": "object",
+        "properties": {
+          "empty": {
+            "type": "boolean"
+          },
+          "sorted": {
+            "type": "boolean"
+          },
+          "unsorted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TransactionSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "totalIncome": {
+            "type": "number"
+          },
+          "totalExpense": {
+            "type": "number"
+          },
+          "balance": {
+            "type": "number"
+          },
+          "transactionCount": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "CategoryItem": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string"
+          },
+          "categoryName": {
+            "type": "string"
+          },
+          "categoryIcon": {
+            "type": "string"
+          },
+          "categoryColor": {
+            "type": "string"
+          },
+          "total": {
+            "type": "number"
+          },
+          "percentage": {
+            "type": "number",
+            "format": "double"
+          },
+          "transactionCount": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "CategorySummaryResponse": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "totalExpense": {
+            "type": "number"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryItem"
+            }
+          }
+        }
+      },
+      "ChatStatsResponse": {
+        "type": "object",
+        "properties": {
+          "plan": {
+            "type": "string",
+            "enum": [
+              "FREE",
+              "PREMIUM"
+            ]
+          },
+          "messagesUsedThisMonth": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "monthlyLimit": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "remainingThisMonth": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "resetsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "totalTokensUsed": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ChatHistoryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "ASSISTANT"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "tokensUsed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "proposedActions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposedActionResponse"
+            }
+          }
+        }
+      },
+      "PageChatHistoryResponse": {
+        "type": "object",
+        "properties": {
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatHistoryResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "description": "Access token obtido em /api/v1/auth/login",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
