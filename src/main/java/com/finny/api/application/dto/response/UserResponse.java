@@ -21,5 +21,7 @@ public class UserResponse {
     private UserPlan plan;
     private LocalDateTime planExpiresAt;
     private Boolean emailVerified;
+    /** Caminho relativo da foto (ex.: /api/v1/users/me/avatar?v=abc), ou null. */
+    private String avatarUrl;
     private LocalDateTime createdAt;
 }

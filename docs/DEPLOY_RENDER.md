@@ -32,7 +32,7 @@ Render com valores aleatórios fortes. Ninguém precisa criar nem digitar.
 
 1. Abra o serviço **fini-api > Logs**. O primeiro build leva de 5 a 10 minutos.
 2. Está pronto quando aparecerem as linhas:
-   - `Successfully applied 9 migrations` (banco criado)
+   - `Successfully applied 10 migrations` (banco criado)
    - `Started FinnyApplication`
 3. No topo da página do serviço aparece a URL pública, algo como
    `https://fini-api-xxxx.onrender.com`.

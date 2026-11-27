@@ -117,6 +117,11 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Tipo de conteúdo não suportado", null);
     }
 
+    @ExceptionHandler(PayloadTooLargeException.class)
+    public ResponseEntity<ErrorResponse> handlePayloadTooLarge(PayloadTooLargeException ex) {
+        return build(HttpStatus.PAYLOAD_TOO_LARGE, ex.getMessage(), null);
+    }
+
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ErrorResponse> handleMaxUpload(MaxUploadSizeExceededException ex) {
         return build(HttpStatus.PAYLOAD_TOO_LARGE, "Arquivo muito grande", null);

@@ -109,6 +109,93 @@
         ]
       }
     },
+    "/api/v1/users/me/avatar": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Baixar a foto de perfil (404 se não houver)",
+        "operationId": "get",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "byte"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Enviar ou trocar a foto de perfil",
+        "description": "Campo \"file\": JPEG, PNG ou WEBP de até 2 MB. O servidor re-encoda para JPEG até 512x512.",
+        "operationId": "upload",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Remover a foto de perfil",
+        "operationId": "delete",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/transactions/{id}": {
       "get": {
         "tags": [
@@ -1582,6 +1669,9 @@
           "fullName": {
             "type": "string"
           },
+          "avatarUrl": {
+            "type": "string"
+          },
           "birthDate": {
             "type": "string",
             "format": "date"
@@ -1715,6 +1805,14 @@
           "onboardingCompletedAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "AvatarResponse": {
+        "type": "object",
+        "properties": {
+          "avatarUrl": {
+            "type": "string"
           }
         }
       },
@@ -2422,6 +2520,9 @@
           },
           "emailVerified": {
             "type": "boolean"
+          },
+          "avatarUrl": {
+            "type": "string"
           },
           "createdAt": {
             "type": "string",

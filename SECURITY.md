@@ -37,7 +37,10 @@
 
 **Entrada e saída**
 - Bean Validation em todos os DTOs; tamanho máximo de página = 100.
-- Upload de imagem: até 5 MB, tipos permitidos e conferência da assinatura do arquivo.
+- Upload de imagem (OCR): até 5 MB, tipos permitidos e conferência da assinatura do arquivo.
+- Foto de perfil: até 2 MB, formato decidido pela assinatura (JPEG/PNG/WEBP), dimensões conferidas
+  antes de decodificar, imagem redesenhada e salva como JPEG 512x512 (remove EXIF/GPS e conteúdo
+  escondido). Servida só para o dono, com `nosniff` e `Content-Security-Policy: default-src 'none'`.
 - Erros nunca expõem stack trace nem mensagens internas.
 - Headers: `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`,
   `Cache-Control: no-store`; HSTS quando servido via HTTPS.

@@ -46,6 +46,10 @@ public class User {
     @Column(nullable = false)
     private Boolean emailVerified = false;
 
+    /** Hash curto da foto atual (muda a cada upload, invalida cache). Null = sem foto. */
+    @Column(length = 16)
+    private String avatarVersion;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

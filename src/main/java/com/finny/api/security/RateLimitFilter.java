@@ -20,7 +20,7 @@ import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Rate limit em memória (janela fixa de 1 minuto).
+ * Rate limit em memória (janela fixa de 1 minuto; a foto de perfil usa janela de 1 hora).
  * <p>
  * Protege contra força bruta no login e contra abuso do chat (custo de IA).
  * Em mais de uma instância, troque por um armazenamento compartilhado (ex.: Redis/Bucket4j).
@@ -30,7 +30,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class RateLimitFilter extends OncePerRequestFilter {
 
-    private static final long WINDOW_MS = Duration.ofMinutes(1).toMillis();
+    private static final long MINUTE_MS = Duration.ofMinutes(1).toMillis();
+    private static final long HOUR_MS = Duration.ofHours(1).toMillis();
+    private static final String AVATAR_PATH = "/api/v1/users/me/avatar";
 
     private final RateLimitProperties properties;
     private final ErrorResponseWriter errorResponseWriter;
@@ -39,6 +41,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
         .expireAfterWrite(Duration.ofMinutes(2))
         .maximumSize(200_000)
         .build();
+    private final Cache<String, AtomicInteger> hourlyCounters = Caffeine.newBuilder()
+        .expireAfterWrite(Duration.ofHours(2))
+        .maximumSize(100_000)
+        .build();
 
     public RateLimitFilter(RateLimitProperties properties, ErrorResponseWriter errorResponseWriter, Clock clock) {
         this.properties = properties;
@@ -46,7 +52,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
         this.clock = clock;
     }
 
-    private record Rule(String name, int limit, boolean perIp) {}
+    private record Rule(String name, int limit, boolean perIp, long windowMs) {
+        Rule(String name, int limit, boolean perIp) {
+            this(name, limit, perIp, MINUTE_MS);
+        }
+    }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -61,12 +71,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String subject = rule.perIp() ? "ip:" + request.getRemoteAddr() : subject(request);
 
         long now = clock.millis();
-        long window = now / WINDOW_MS;
+        long windowMs = rule.windowMs();
+        long window = now / windowMs;
         String key = rule.name() + '|' + subject + '|' + window;
-        int count = counters.get(key, k -> new AtomicInteger()).incrementAndGet();
+        Cache<String, AtomicInteger> store = windowMs == MINUTE_MS ? counters : hourlyCounters;
+        int count = store.get(key, k -> new AtomicInteger()).incrementAndGet();
 
         if (count > rule.limit()) {
-            long retryAfter = Math.max(1, ((window + 1) * WINDOW_MS - now + 999) / 1000);
+            long retryAfter = Math.max(1, ((window + 1) * windowMs - now + 999) / 1000);
             if (count == rule.limit() + 1) {
                 log.warn("Rate limit atingido | regra: {} | {}", rule.name(), subject);
             }
@@ -93,6 +105,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
         if (post && uri.startsWith("/api/v1/ocr/")) {
             return new Rule("upload", properties.getUploadPerMinute(), false);
+        }
+        if ("PUT".equalsIgnoreCase(request.getMethod()) && uri.equals(AVATAR_PATH)) {
+            return new Rule("avatar", properties.getAvatarPerHour(), false, HOUR_MS);
         }
         return new Rule("default", properties.getDefaultPerMinute(), false);
     }

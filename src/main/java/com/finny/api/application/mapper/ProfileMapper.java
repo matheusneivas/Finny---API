@@ -8,9 +8,10 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", imports = AvatarUrls.class)
 public interface ProfileMapper {
     @Mapping(source = "user.fullName", target = "fullName")
+    @Mapping(target = "avatarUrl", expression = "java(profile.getUser() == null ? null : AvatarUrls.forVersion(profile.getUser().getAvatarVersion()))")
     ProfileResponse toResponse(UserProfile profile);
     UserProfile toEntity(OnboardingRequest request);
     void updateEntityFromRequest(UpdateProfileRequest request, @MappingTarget UserProfile profile);

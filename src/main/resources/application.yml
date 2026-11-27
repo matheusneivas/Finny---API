@@ -123,6 +123,7 @@ app:
     refresh-per-minute: ${RATE_LIMIT_REFRESH:30}
     chat-per-minute: ${RATE_LIMIT_CHAT:15}
     upload-per-minute: ${RATE_LIMIT_UPLOAD:10}
+    avatar-per-hour: ${RATE_LIMIT_AVATAR:10}
     default-per-minute: ${RATE_LIMIT_DEFAULT:300}
 
 logging:
