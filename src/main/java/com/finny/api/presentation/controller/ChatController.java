@@ -29,6 +29,7 @@ import java.util.UUID;
 public class ChatController {
 
     private final ChatService chatService;
+    private final com.finny.api.application.service.ChatActionService chatActionService;
 
     @PostMapping("/messages")
     @Operation(summary = "Enviar mensagem para o assistente",
@@ -59,6 +60,17 @@ public class ChatController {
                 .success(true)
                 .message("Histórico apagado com sucesso")
                 .build());
+    }
+
+    @PutMapping("/actions/{actionId}")
+    @Operation(summary = "Marcar um cartão de confirmação como confirmado ou descartado",
+        description = "Idempotente. 404 se a ação não for de uma mensagem do usuário; 409 ao tentar descartar uma ação já confirmada.")
+    public ResponseEntity<Void> updateActionStatus(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable String actionId,
+            @Valid @RequestBody com.finny.api.application.dto.request.UpdateActionStatusRequest request) {
+        chatActionService.updateStatus(UUID.fromString(userDetails.getUsername()), actionId, request.status());
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/stats")

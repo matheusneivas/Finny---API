@@ -430,6 +430,46 @@
         ]
       }
     },
+    "/api/v1/chat/actions/{actionId}": {
+      "put": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Marcar um cartão de confirmação como confirmado ou descartado",
+        "description": "Idempotente. 404 se a ação não for de uma mensagem do usuário; 409 ao tentar descartar uma ação já confirmada.",
+        "operationId": "updateActionStatus",
+        "parameters": [
+          {
+            "name": "actionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateActionStatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/categories/{id}": {
       "put": {
         "tags": [
@@ -571,7 +611,18 @@
           "Transactions"
         ],
         "summary": "Criar nova transação",
+        "description": "Aceita o cabeçalho Idempotency-Key: repetir a mesma chave devolve a transação criada da primeira vez.",
         "operationId": "createTransaction",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -934,7 +985,18 @@
           "Goals"
         ],
         "summary": "Criar nova meta",
+        "description": "Aceita o cabeçalho Idempotency-Key.",
         "operationId": "createGoal",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -970,6 +1032,7 @@
           "Goals"
         ],
         "summary": "Adicionar contribuição à meta",
+        "description": "Aceita o cabeçalho Idempotency-Key.",
         "operationId": "contributeToGoal",
         "parameters": [
           {
@@ -979,6 +1042,14 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -2058,6 +2129,22 @@
           }
         }
       },
+      "UpdateActionStatusRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "CONFIRMED",
+              "DISCARDED"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
       "CategoryRequest": {
         "type": "object",
         "properties": {
@@ -2435,6 +2522,15 @@
             "type": "string",
             "description": "Resumo em português, montado pelo servidor, para exibir no cartão",
             "example": "Adicionar despesa de R$ 50,00 em Alimentação (Mercado) em 26/11/2026"
+          },
+          "status": {
+            "type": "string",
+            "description": "Estado do cartão: PENDING, CONFIRMED ou DISCARDED",
+            "enum": [
+              "PENDING",
+              "CONFIRMED",
+              "DISCARDED"
+            ]
           },
           "payload": {
             "type": "object",
