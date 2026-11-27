@@ -57,6 +57,20 @@ server:
   port: ${PORT:8080}
   # Atrás de proxy/load balancer (Render, Railway, Nginx...) use FORWARD_HEADERS_STRATEGY=framework
   forward-headers-strategy: ${FORWARD_HEADERS_STRATEGY:none}
+  tomcat:
+    max-swallow-size: 6MB
+    # Uma linha por requisição no log (método, caminho sem query string, status, duração).
+    # Sem IP, headers ou corpo. O health check do Render fica de fora.
+    accesslog:
+      enabled: ${ACCESS_LOG_ENABLED:true}
+      directory: /dev
+      prefix: stdout
+      suffix: ""
+      file-date-format: ""
+      rotate: false
+      buffered: false
+      pattern: "%{yyyy-MM-dd'T'HH:mm:ss.SSSXXX}t ACCESS %m %U %s %{ms}Tms"
+      condition-unless: noAccessLog
   error:
     include-message: never
     include-binding-errors: never
@@ -64,8 +78,6 @@ server:
     include-exception: false
   compression:
     enabled: true
-  tomcat:
-    max-swallow-size: 6MB
 
 management:
   endpoints:

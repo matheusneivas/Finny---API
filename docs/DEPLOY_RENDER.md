@@ -108,8 +108,19 @@ desligada. Para ligar com o Resend:
 4. **Save, rebuild, and deploy**. Contas criadas antes disso continuam liberadas; quem se
    cadastrou com a verificação desligada recebe um código no próximo login.
 
-Alternativa sem domínio: Brevo (`MAIL_PROVIDER=brevo`, `BREVO_API_KEY`, e `MAIL_FROM` com um
-remetente verificado no Brevo).
+### Alternativa sem domínio: Brevo (é o que o Fini usa hoje)
+
+1. Crie a conta em https://brevo.com. Em **Senders, Domains & Dedicated IPs > Senders**, adicione
+   o Gmail que vai enviar os códigos e confirme pelo link que chega nele.
+2. Em **SMTP & API > API Keys**, gere uma chave (`xkeysib-...`).
+3. **Importante:** em **Configurações > Segurança > IPs autorizados** ("Authorised IPs"), desative
+   o bloqueio de IP das chaves de API. O Render muda de IP, e com o bloqueio ligado o Brevo recusa
+   todos os envios sem registrar nada em **Transacional > Logs**.
+4. No Render, crie `MAIL_PROVIDER` = `brevo`, `BREVO_API_KEY` = a chave e
+   `MAIL_FROM` = `Fini <seu-gmail@gmail.com>`. Depois, **Save, rebuild, and deploy**.
+
+Se o código não chegar, procure `mail` nos Logs do Render: a linha `Falha ao enviar e-mail` traz o
+status e o motivo dado pelo provedor.
 
 ## Planos e custos
 
@@ -125,6 +136,16 @@ Para trocar a API: no painel do Render, abra o serviço e use **Settings > Insta
 O banco antigo do Render (`fini-db`) não é mais usado. O Render não apaga nada sozinho por ter
 saído do `render.yaml`: quando a API estiver funcionando com o Supabase, apague o `fini-db` no
 painel (**fini-db > Settings > Delete Database**). Ele só tinha dados de teste.
+
+## Ler o log de requisições
+
+Cada requisição gera uma linha assim nos **Logs** do Render:
+
+`2026-11-27T03:16:44.319Z ACCESS POST /api/v1/auth/register 409 291ms`
+
+Ela mostra o método, o caminho, o status e quanto tempo levou (sem IP, dados nem senhas). Se o app
+diz "Não consegui falar com o servidor" e não aparece linha nenhuma no horário, a requisição nem
+chegou à API.
 
 ## Problemas comuns
 
