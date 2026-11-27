@@ -118,6 +118,14 @@ app:
     # Só para a versão web (o app mobile não usa CORS). Ex.: https://app.fini.com.br
     allowed-origins: ${CORS_ALLOWED_ORIGINS:}
   cpf-secret: ${CPF_SECRET:}
+  auth:
+    # Exige confirmar o e-mail com código antes de usar as rotas de dados (só vale com MAIL_PROVIDER ligado)
+    require-email-verification: ${REQUIRE_EMAIL_VERIFICATION:true}
+  mail:
+    # resend | brevo | none (none = não envia e a verificação fica desligada)
+    provider: ${MAIL_PROVIDER:none}
+    from: ${MAIL_FROM:Fini <onboarding@resend.dev>}
+    api-key: ${RESEND_API_KEY:${BREVO_API_KEY:}}
   chat:
     free-monthly-limit: ${CHAT_FREE_MONTHLY_LIMIT:100}
     premium-monthly-limit: ${CHAT_PREMIUM_MONTHLY_LIMIT:1000}

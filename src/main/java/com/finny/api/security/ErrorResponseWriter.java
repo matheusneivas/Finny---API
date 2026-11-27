@@ -20,6 +20,10 @@ public class ErrorResponseWriter {
     private final ObjectMapper objectMapper;
 
     public void write(HttpServletResponse response, HttpStatus status, String message) throws IOException {
+        write(response, status, message, null);
+    }
+
+    public void write(HttpServletResponse response, HttpStatus status, String message, String code) throws IOException {
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
@@ -28,6 +32,7 @@ public class ErrorResponseWriter {
             .status(status.value())
             .error(status.getReasonPhrase())
             .message(message)
+            .code(code)
             .build());
     }
 }

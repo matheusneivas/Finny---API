@@ -4,6 +4,7 @@ import com.finny.api.security.ErrorResponseWriter;
 import com.finny.api.security.InternalApiKeyFilter;
 import com.finny.api.security.JwtAuthenticationEntryPoint;
 import com.finny.api.security.JwtAuthenticationFilter;
+import com.finny.api.security.EmailVerificationFilter;
 import com.finny.api.security.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -35,6 +36,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final InternalApiKeyFilter internalApiKeyFilter;
     private final RateLimitFilter rateLimitFilter;
+    private final EmailVerificationFilter emailVerificationFilter;
     private final ErrorResponseWriter errorResponseWriter;
     private final CorsConfigurationSource corsConfigurationSource;
 
@@ -59,7 +61,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(HttpMethod.POST,
                     "/api/v1/auth/register", "/api/v1/auth/login",
-                    "/api/v1/auth/refresh", "/api/v1/auth/logout").permitAll()
+                    "/api/v1/auth/refresh", "/api/v1/auth/logout",
+                    "/api/v1/auth/password/forgot", "/api/v1/auth/password/reset").permitAll()
 
                 // Callbacks internos (n8n): exigem X-Internal-API-Key
                 .requestMatchers("/api/internal/**").hasAuthority(InternalApiKeyFilter.ROLE)
@@ -78,6 +81,7 @@ public class SecurityConfig {
         http.addFilterBefore(internalApiKeyFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterAfter(rateLimitFilter, JwtAuthenticationFilter.class);
+        http.addFilterAfter(emailVerificationFilter, RateLimitFilter.class);
 
         return http.build();
     }
@@ -95,6 +99,11 @@ public class SecurityConfig {
 
     @Bean
     public FilterRegistrationBean<RateLimitFilter> rateLimitFilterRegistration(RateLimitFilter filter) {
+        return disabled(filter);
+    }
+
+    @Bean
+    public FilterRegistrationBean<EmailVerificationFilter> emailVerificationFilterRegistration(EmailVerificationFilter filter) {
         return disabled(filter);
     }
 

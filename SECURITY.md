@@ -18,6 +18,10 @@
 - Logout revoga a sessão. Tokens vencidos são limpos diariamente.
 - BCrypt custo 12; senha limitada a 72 bytes (limite do BCrypt). E-mail normalizado.
 - Mensagem genérica para e-mail inexistente e senha errada.
+- Verificação de e-mail e recuperação de senha com código de 6 dígitos: guardado só como HMAC,
+  vale 15 min, 5 tentativas, um código válido por vez, 60 s entre envios e 10 por dia. "Esqueci a
+  senha" responde igual para e-mail existente ou não, e o envio acontece fora da requisição (sem
+  diferença de tempo). Trocar a senha encerra todas as sessões.
 
 **Autorização e isolamento**
 - Todas as consultas filtram pelo usuário autenticado (transações, metas, OCR, tokens de push).
@@ -66,7 +70,6 @@
 
 ## Pendências conhecidas
 
-- Verificação de e-mail e recuperação de senha ainda não existem.
 - Exclusão de conta e exportação de dados (direitos do titular na LGPD) ainda não existem.
 - OCR (`/ocr/process`) ainda é um esboço: a imagem não é armazenada nem enviada ao n8n.
 

@@ -20,6 +20,12 @@ internal:
   api-key: test-internal-key-0123456789abcdef0123
 
 app:
+  mail:
+    provider: log
+    async: false
+  auth:
+    # Ligado só nos testes de verificação de e-mail
+    require-email-verification: false
   cpf-secret: test-cpf-secret-0123456789
   rate-limit:
     enabled: false

@@ -97,6 +97,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         if (post && (uri.equals("/api/v1/auth/login") || uri.equals("/api/v1/auth/register"))) {
             return new Rule("auth", properties.getAuthPerMinute(), true);
         }
+        if (post && (uri.startsWith("/api/v1/auth/password/") || uri.startsWith("/api/v1/auth/email/"))) {
+            return new Rule("auth-code", properties.getAuthPerMinute(), true);
+        }
         if (post && uri.equals("/api/v1/auth/refresh")) {
             return new Rule("refresh", properties.getRefreshPerMinute(), true);
         }

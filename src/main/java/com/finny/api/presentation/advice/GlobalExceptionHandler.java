@@ -117,6 +117,14 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Tipo de conteúdo não suportado", null);
     }
 
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<ErrorResponse> handleTooManyRequests(TooManyRequestsException ex) {
+        ResponseEntity<ErrorResponse> body = build(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage(), null);
+        return ResponseEntity.status(body.getStatusCode())
+            .header("Retry-After", String.valueOf(ex.getRetryAfterSeconds()))
+            .body(body.getBody());
+    }
+
     @ExceptionHandler(PayloadTooLargeException.class)
     public ResponseEntity<ErrorResponse> handlePayloadTooLarge(PayloadTooLargeException ex) {
         return build(HttpStatus.PAYLOAD_TOO_LARGE, ex.getMessage(), null);

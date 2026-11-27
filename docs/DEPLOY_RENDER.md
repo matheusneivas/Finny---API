@@ -76,7 +76,7 @@ Render com valores aleatórios fortes. Ninguém precisa criar nem digitar.
 
 1. Abra o serviço **fini-api > Logs**. O primeiro build leva de 5 a 10 minutos.
 2. Está pronto quando aparecerem as linhas:
-   - `Successfully applied 11 migrations` (banco criado)
+   - `Successfully applied ... migrations to schema "fini"` (banco criado)
    - `Started FinnyApplication`
 3. No topo da página do serviço aparece a URL pública, algo como
    `https://fini-api-xxxx.onrender.com`.
@@ -92,6 +92,24 @@ Mande só essa URL na conversa (ela não é segredo).
 - **Versão web**: quando existir, coloque o domínio em `CORS_ALLOWED_ORIGINS`
   (ex.: `https://app.fini.com.br`). O app mobile não precisa disso.
 - **Novos deploys**: todo merge na `master` faz deploy automático.
+
+## E-mails (código de verificação e "esqueci a senha")
+
+Enquanto nenhum provedor estiver configurado, a API não envia e-mails e a verificação fica
+desligada. Para ligar com o Resend:
+
+1. Crie a conta em https://resend.com. Em **Domains**, adicione seu domínio e crie os registros
+   DNS que ele mostrar (sem domínio próprio, o Resend só entrega para o seu e-mail).
+2. Em **API Keys > Create API Key**, permissão **Sending access**, copie a chave (`re_...`).
+3. No Render, **fini-api > Environment**, crie:
+   - `MAIL_PROVIDER` = `resend`
+   - `RESEND_API_KEY` = a chave
+   - `MAIL_FROM` = `Fini <codigo@seu-dominio.com.br>`
+4. **Save, rebuild, and deploy**. Contas criadas antes disso continuam liberadas; quem se
+   cadastrou com a verificação desligada recebe um código no próximo login.
+
+Alternativa sem domínio: Brevo (`MAIL_PROVIDER=brevo`, `BREVO_API_KEY`, e `MAIL_FROM` com um
+remetente verificado no Brevo).
 
 ## Planos e custos
 
