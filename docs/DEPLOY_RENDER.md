@@ -90,7 +90,6 @@ Mande só essa URL na conversa (ela não é segredo).
   **fini-api > Environment** (botão de olho para revelar) e cole no n8n, no header
   `X-Internal-API-Key`.
 - **Versão web (site)**: em Environment, coloque o endereço do site em `CORS_ALLOWED_ORIGINS` (ex.: `https://finny-ia.vercel.app`, sem barra no final) e salve com redeploy. Passo a passo no `docs/SITE.md` do repositório do app.
-  (ex.: `https://app.finny.com.br`). O app mobile não precisa disso.
 - **Novos deploys**: todo merge na `master` faz deploy automático.
 
 ## E-mails (código de verificação e "esqueci a senha")
