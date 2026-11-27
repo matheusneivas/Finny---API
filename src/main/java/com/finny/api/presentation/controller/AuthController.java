@@ -3,7 +3,14 @@ package com.finny.api.presentation.controller;
 import com.finny.api.application.dto.request.LoginRequest;
 import com.finny.api.application.dto.request.LogoutRequest;
 import com.finny.api.application.dto.request.RefreshTokenRequest;
+import com.finny.api.application.dto.request.ForgotPasswordRequest;
 import com.finny.api.application.dto.request.RegisterRequest;
+import com.finny.api.application.dto.request.ResetPasswordRequest;
+import com.finny.api.application.dto.request.VerifyEmailRequest;
+import com.finny.api.application.dto.response.UserResponse;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import java.util.UUID;
 import com.finny.api.application.dto.response.ApiResponse;
 import com.finny.api.application.dto.response.AuthResponse;
 import com.finny.api.application.service.AuthService;
@@ -55,5 +62,39 @@ public class AuthController {
                 .success(true)
                 .message("Logout realizado com sucesso")
                 .build());
+    }
+
+    @PostMapping("/email/verify")
+    @Operation(summary = "Confirmar o e-mail com o código de 6 dígitos",
+        description = "Exige Bearer. Código vale 15 minutos e aceita 5 tentativas. Devolve o usuário atualizado.")
+    @io.swagger.v3.oas.annotations.security.SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<UserResponse> verifyEmail(@AuthenticationPrincipal UserDetails userDetails,
+                                                    @Valid @RequestBody VerifyEmailRequest request) {
+        return ResponseEntity.ok(authService.verifyEmail(UUID.fromString(userDetails.getUsername()), request.code()));
+    }
+
+    @PostMapping("/email/resend")
+    @Operation(summary = "Reenviar o código de verificação",
+        description = "Exige Bearer. Intervalo mínimo de 60 s (429 com Retry-After).")
+    @io.swagger.v3.oas.annotations.security.SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<Void> resendVerification(@AuthenticationPrincipal UserDetails userDetails) {
+        authService.resendVerification(UUID.fromString(userDetails.getUsername()));
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/password/forgot")
+    @Operation(summary = "Pedir código para criar nova senha",
+        description = "Sempre 204, exista ou não a conta. Intervalo mínimo de 60 s por e-mail (429 com Retry-After).")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request.email());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/password/reset")
+    @Operation(summary = "Criar nova senha com o código recebido",
+        description = "Encerra todas as sessões abertas. Depois, faça login com a senha nova.")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request.email(), request.code(), request.newPassword());
+        return ResponseEntity.noContent().build();
     }
 }

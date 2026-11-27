@@ -17,5 +17,7 @@ public class ErrorResponse {
     private Integer status;
     private String error;
     private String message;
+    /** Código estável para o app tratar casos específicos (ex.: EMAIL_NOT_VERIFIED). */
+    private String code;
     private Map<String, String> errors;
 }
