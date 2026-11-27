@@ -55,6 +55,7 @@ docker run -p 8080:8080 --env-file .env fini-api
 - [docs/API.md](docs/API.md): guia para o app (autenticação, chat e cartões de confirmação, erros)
 - [docs/openapi.json](docs/openapi.json): especificação OpenAPI completa
 - [SECURITY.md](SECURITY.md): medidas de segurança e checklist de produção
+- [docs/DEPLOY_RENDER.md](docs/DEPLOY_RENDER.md): passo a passo para colocar no ar no Render (`render.yaml`)
 
 ## Arquitetura
 

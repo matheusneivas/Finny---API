@@ -1,0 +1,81 @@
+# Blueprint do Render: API (Docker) + PostgreSQL.
+# No painel do Render: New > Blueprint > escolha este repositório. Guia: docs/DEPLOY_RENDER.md
+#
+# Planos "free" para começar. Limites do free: a API "dorme" após 15 min sem uso
+# (a primeira requisição depois disso demora ~1 min) e o banco free expira em 30 dias.
+# Para uso real, troque no painel para Starter (API) e Basic (banco).
+
+databases:
+  - name: fini-db
+    databaseName: finny_db
+    user: finny
+    plan: free
+    region: virginia
+    postgresMajorVersion: "16"
+    # Sem acesso externo ao banco: só a API (rede interna do Render) se conecta
+    ipAllowList: []
+
+services:
+  - type: web
+    name: fini-api
+    runtime: docker
+    plan: free
+    region: virginia
+    branch: master
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /actuator/health
+    autoDeploy: true
+    envVars:
+      # Banco (preenchido automaticamente pelo Render)
+      - key: DB_HOST
+        fromDatabase:
+          name: fini-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: fini-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: fini-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: fini-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: fini-db
+          property: password
+      - key: DB_POOL_SIZE
+        value: "5"
+
+      # Segredos gerados pelo próprio Render (valores aleatórios fortes, ninguém precisa digitar)
+      - key: JWT_SECRET
+        generateValue: true
+      - key: INTERNAL_API_KEY
+        generateValue: true
+      - key: CPF_SECRET
+        generateValue: true
+
+      # Chave da Anthropic: o Render pede o valor na criação do Blueprint
+      - key: AI_API_KEY
+        sync: false
+      - key: AI_PROVIDER
+        value: anthropic
+      - key: AI_MODEL
+        value: claude-haiku-5-5
+      - key: AI_EFFORT
+        value: low
+
+      # Render fica atrás de um proxy: usar o IP real do cliente no rate limit
+      - key: FORWARD_HEADERS_STRATEGY
+        value: framework
+      - key: API_DOCS_ENABLED
+        value: "false"
+      - key: CORS_ALLOWED_ORIGINS
+        value: ""
+
+      # JVM ajustada para 512 MB (plano free)
+      - key: JAVA_OPTS
+        value: "-XX:MaxRAMPercentage=70 -XX:+UseSerialGC -Xss512k -XX:TieredStopAtLevel=1 -Duser.timezone=America/Sao_Paulo"
