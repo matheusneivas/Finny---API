@@ -1,19 +1,11 @@
-# Blueprint do Render: API (Docker) + PostgreSQL.
+# Blueprint do Render: só a API (Docker). O banco PostgreSQL fica no Supabase.
 # No painel do Render: New > Blueprint > escolha este repositório. Guia: docs/DEPLOY_RENDER.md
 #
-# Planos "free" para começar. Limites do free: a API "dorme" após 15 min sem uso
-# (a primeira requisição depois disso demora ~1 min) e o banco free expira em 30 dias.
-# Para uso real, troque no painel para Starter (API) e Basic (banco).
-
-databases:
-  - name: fini-db
-    databaseName: finny_db
-    user: finny
-    plan: free
-    region: virginia
-    postgresMajorVersion: "16"
-    # Sem acesso externo ao banco: só a API (rede interna do Render) se conecta
-    ipAllowList: []
+# Plano "free" para começar: a API "dorme" após 15 min sem uso (a primeira requisição
+# depois disso demora ~1 min). Para uso real, troque no painel para Starter.
+#
+# O banco antigo do Render (fini-db) saiu deste arquivo, mas o Render NÃO apaga recursos
+# removidos do Blueprint: ele continua existindo até ser apagado à mão no painel.
 
 services:
   - type: web
@@ -26,27 +18,24 @@ services:
     healthCheckPath: /actuator/health
     autoDeploy: true
     envVars:
-      # Banco (preenchido automaticamente pelo Render)
+      # Banco no Supabase (Session pooler, IPv4, aceita prepared statements e Flyway).
+      # Host, usuário e senha são preenchidos à mão em Environment (guia: docs/DEPLOY_RENDER.md).
       - key: DB_HOST
-        fromDatabase:
-          name: fini-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: fini-db
-          property: port
-      - key: DB_NAME
-        fromDatabase:
-          name: fini-db
-          property: database
+        sync: false
       - key: DB_USERNAME
-        fromDatabase:
-          name: fini-db
-          property: user
+        sync: false
       - key: DB_PASSWORD
-        fromDatabase:
-          name: fini-db
-          property: password
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_NAME
+        value: postgres
+      # Tabelas no schema "fini", fora do "public" que a Data API do Supabase expõe
+      - key: DB_SCHEMA
+        value: fini
+      - key: DB_URL_PARAMS
+        value: "?sslmode=require"
+      # Plano grátis do Supabase tem poucas conexões no pooler: 5 é suficiente para a API
       - key: DB_POOL_SIZE
         value: "5"
 
