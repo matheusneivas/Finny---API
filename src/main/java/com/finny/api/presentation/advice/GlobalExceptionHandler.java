@@ -102,6 +102,18 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), null);
     }
 
+    @ExceptionHandler(com.finny.api.application.exception.PlanLimitException.class)
+    public ResponseEntity<ErrorResponse> handlePlanLimit(com.finny.api.application.exception.PlanLimitException ex) {
+        HttpStatus status = HttpStatus.PAYMENT_REQUIRED;
+        return ResponseEntity.status(status).body(ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(status.value())
+            .error(status.getReasonPhrase())
+            .message(ex.getMessage())
+            .code(com.finny.api.application.exception.PlanLimitException.CODE)
+            .build());
+    }
+
     @ExceptionHandler(ServiceUnavailableException.class)
     public ResponseEntity<ErrorResponse> handleServiceUnavailable(ServiceUnavailableException ex) {
         return build(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), null);

@@ -40,6 +40,7 @@ public class TransactionService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final TransactionMapper transactionMapper;
+    private final PlanService planService;
 
     @Transactional
     public TransactionResponse createTransaction(UUID userId, TransactionRequest request) {
@@ -47,6 +48,12 @@ public class TransactionService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
+
+        boolean repeats = request.getFrequency() != null
+                && request.getFrequency() != ExpenseFrequency.ONCE
+                && request.getRepeatCount() != null
+                && request.getRepeatCount() > 1;
+        planService.checkTransactionQuota(user, repeats ? request.getRepeatCount() : 1);
 
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada"));

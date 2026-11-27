@@ -28,4 +28,14 @@ public class RegisterRequest {
     @NotBlank(message = "Nome completo é obrigatório")
     @Size(max = 120, message = "Nome deve ter no máximo 120 caracteres")
     private String fullName;
+
+    /** Com ou sem pontuação. Obrigatório: um cadastro por CPF (a API guarda só o HMAC). */
+    @NotBlank(message = "CPF é obrigatório")
+    @Size(max = 14, message = "CPF inválido")
+    private String cpf;
+
+    /** Celular com DDD, com ou sem pontuação (ex.: (11) 98765-4321). */
+    @NotBlank(message = "Telefone é obrigatório")
+    @Pattern(regexp = "^[\\d\\s()+.-]{10,20}$", message = "Telefone inválido")
+    private String phone;
 }

@@ -16,6 +16,7 @@ import java.util.UUID;
 public class UserResponse {
     private UUID id;
     private String email;
+    private String phone;
     private String name;
     private Boolean onboardingCompleted;
     private UserPlan plan;

@@ -36,6 +36,10 @@ public class User {
     @Column(length = 64, unique = true)
     private String cpfHash;
 
+    /** Só dígitos, com DDD (ex.: 11987654321). */
+    @Column(length = 20)
+    private String phone;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserPlan plan = UserPlan.FREE;

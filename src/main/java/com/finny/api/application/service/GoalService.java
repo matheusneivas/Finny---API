@@ -31,6 +31,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class GoalService {
 
+    private final PlanService planService;
+
     private final GoalRepository goalRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
@@ -63,6 +65,8 @@ public class GoalService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
+
+        planService.checkGoalQuota(user);
 
         Goal goal = goalMapper.toEntity(request);
         goal.setUser(user);

@@ -113,7 +113,7 @@ class ChatIntegrationTest extends IntegrationTestBase {
             .andExpect(status().isOk());
 
         sendChat(session, "3").andExpect(status().isOk()).andExpect(jsonPath("$.messagesUsedThisMonth").value(3));
-        sendChat(session, "4").andExpect(status().isUnprocessableEntity());
+        sendChat(session, "4").andExpect(status().isPaymentRequired());
 
         mockMvc.perform(get("/api/v1/chat/stats").header("Authorization", bearer(session)))
             .andExpect(status().isOk())

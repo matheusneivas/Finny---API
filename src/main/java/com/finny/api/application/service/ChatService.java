@@ -9,6 +9,7 @@ import com.finny.api.application.dto.response.ChatResponse;
 import com.finny.api.application.dto.response.ChatStatsResponse;
 import com.finny.api.application.dto.response.ProposedActionResponse;
 import com.finny.api.application.exception.BusinessException;
+import com.finny.api.application.exception.PlanLimitException;
 import com.finny.api.application.exception.EntityNotFoundException;
 import com.finny.api.application.exception.ServiceUnavailableException;
 import com.finny.api.application.service.assistant.AssistantPromptBuilder;
@@ -68,6 +69,7 @@ public class ChatService {
     private final ChatProperties chatProperties;
     private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
+    private final PlanService planService;
 
     public ChatResponse sendMessage(UUID userId, ChatMessageRequest request) {
         String text = request.getMessage().trim();
@@ -76,11 +78,13 @@ public class ChatService {
         // 1) Reserva uma mensagem do limite mensal (atômico) + grava a mensagem + monta contexto
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
-        MonthlyUsage usage = usageService.tryReserve(userId, user.getPlan());
+        UserPlan plan = planService.effectivePlan(user);
+        MonthlyUsage usage = usageService.tryReserve(userId, plan);
         if (usage == null) {
-            long limit = usageService.limitFor(user.getPlan());
+            long limit = usageService.limitFor(plan);
             log.warn("Limite mensal atingido | user: {} | limite: {}", userId, limit);
-            throw new BusinessException(limitMessage(user.getPlan(), limit));
+            if (plan == UserPlan.FREE) throw new PlanLimitException(limitMessage(plan, limit));
+            throw new BusinessException(limitMessage(plan, limit));
         }
 
         Prepared prepared;
@@ -175,9 +179,10 @@ public class ChatService {
     public ChatStatsResponse getStats(UUID userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
-        MonthlyUsage usage = usageService.getMonthlyUsage(userId, user.getPlan());
+        UserPlan plan = planService.effectivePlan(user);
+        MonthlyUsage usage = usageService.getMonthlyUsage(userId, plan);
         return ChatStatsResponse.builder()
-            .plan(user.getPlan())
+            .plan(plan)
             .messagesUsedThisMonth(usage.used())
             .monthlyLimit(usage.limit())
             .remainingThisMonth(usage.remaining())
@@ -271,8 +276,8 @@ public class ChatService {
 
     private static String limitMessage(UserPlan plan, long limit) {
         return plan == UserPlan.FREE
-            ? String.format("Você usou as %d mensagens do plano gratuito deste mês. O limite renova no dia 1º, "
-                + "ou faça upgrade para o Premium.", limit)
+            ? String.format("Você usou as %d mensagens com a IA do plano grátis deste mês. O limite renova no dia 1º, "
+                + "ou assine o Premium.", limit)
             : String.format("Você atingiu o limite de %d mensagens deste mês. O limite renova no dia 1º.", limit);
     }
 

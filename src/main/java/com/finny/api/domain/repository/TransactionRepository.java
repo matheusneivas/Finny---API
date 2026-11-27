@@ -70,6 +70,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     // Contar transações do usuário
     long countByUserIdAndDeletedFalse(UUID userId);
 
+    long countByUserIdAndCreatedAtGreaterThanEqual(UUID userId, java.time.LocalDateTime start);
+
     /**
      * Busca transações com filtros múltiplos
      * @param userId ID do usuário (obrigatório - tenant isolation)
